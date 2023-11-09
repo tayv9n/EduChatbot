@@ -21,8 +21,6 @@ export function Home() {
         <a href="createlobby">
           <button className="button">Create Chatroom</button>
         </a>
-
-        <Link to="/chatroom">chat</Link>
       </main>
     </div>
   );
