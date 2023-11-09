@@ -40,7 +40,7 @@ export function JoinLobby() {
     //three main sections: screen, content box, members box
     <div className="screen">
       <div>
-        <h1 className="joinheader">JOIN CHATROOMNAME</h1>
+        <h1 className="joinheader">JOIN CHATROOM</h1>
       </div>
 
       <div className="logo-container">
