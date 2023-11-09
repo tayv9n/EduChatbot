@@ -22,7 +22,7 @@ export function Home() {
           <button className="button">Create Chatroom</button>
         </a>
 
-        <Link to="chatroom">chat</Link>
+        <Link to="/chatroom">chat</Link>
       </main>
     </div>
   );

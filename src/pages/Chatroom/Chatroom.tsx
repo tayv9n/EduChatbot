@@ -5,9 +5,9 @@ import './Chatroom.css'
 export function Chatroom() {
   return (
     <div style={{
-      backgroundColor: '#272727'
+      backgroundColor: 'white'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#E3E3E3', fontSize: 25, fontWeight: 600, padding: 30 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#383838', fontSize: 25, fontWeight: 600, padding: 30 }}>
         <p>{'Menu'}</p>
         <p>{'Chatroom: LPRB'}</p>
       </div>
@@ -28,7 +28,7 @@ function SideBar() {
       <div style={{ 
         display: 'flex',
         height: 48,
-        backgroundColor: '#000000',
+        backgroundColor: '#D7DBDB',
         color: '#6C9EB1',
         borderRadius: 15,
         alignItems: 'center',
@@ -36,19 +36,35 @@ function SideBar() {
         marginLeft: 10,
         justifyContent: 'center'
       }}>
-        <div style={{width: 30, height: 30, backgroundColor: '#527785'}}/>
-        <p style={{ fontWeight: 600, fontSize: 22 }}>Chatroom</p>
+        <div style={{width: 30,height: 30,backgroundImage: 'url("chatroom.png")', backgroundSize: 'cover',backgroundPosition: 'center'}} />
+        <p style={{marginLeft: 8, fontWeight: 600, fontSize: 22 }}>Chatroom</p>
       </div>
 
-      <div style={{ display: 'flex', marginLeft: '20%', marginTop: 20, marginBottom: 20 }}>
-        <div style={{width: 30, height: 30, backgroundColor: '#E3E3E3'}}/>
-        <p style={{ fontSize: 22, fontWeight: 600, color: '#E3E3E3' }}>Settings</p>
+      <div style={{ display: 'flex', marginLeft: '20%', marginTop: 20, marginBottom: 20}}>
+      <div style={{width: 30,height: 30,backgroundImage: 'url("settings.png")', backgroundSize: 'cover',backgroundPosition: 'center'}} />
+        <p style={{marginLeft: 10, fontSize: 22, fontWeight: 600, color: '#383838' }}>Settings</p>
       </div>
 
       <div style={{ display: 'flex', marginLeft: '20%', marginTop: 20}}>
-        <div style={{width: 30, height: 30, backgroundColor: '#E3E3E3'}}/>
-        <p style={{ fontSize: 22, fontWeight: 600, color: '#E3E3E3' }}>Export</p>
+      <div style={{width: 30,height: 30,backgroundImage: 'url("export.png")', backgroundSize: 'cover',backgroundPosition: 'center'}} />
+        <p style={{marginLeft: 10, fontSize: 22, fontWeight: 600, color: '#383838' }}>Export</p>
       </div>
+
+      <a href="home" style={{ position: 'relative', top: 470, left: 20 }}>
+        <button style={{
+          backgroundColor: '#F3F3F3',
+          width: 150,
+          height: 50,
+          borderRadius: 10,
+          marginBottom: 20,
+          color: '#5A2C00',
+          fontSize: 18,
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '10px 20px', // Adjust padding as needed
+        }}>Quit Chatroom</button>
+      </a>
     </div>
   )
 }
@@ -62,8 +78,8 @@ function ChatHeader(props : ChatHeaderProps) {
   return (
     <div
       style={{
-        backgroundColor: '#251D16',
-        color: '#FFC690',
+        backgroundColor: '#ECE7E0',
+        color: '#383838',
         borderRadius: 20,
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -90,15 +106,25 @@ function ChatBox() {
     return (
       <div>
         <div style={{display: 'flex', alignItems: 'center'}}>
-          <div style={{
-              width: 56,
-              height: 56,
-              backgroundColor: '#B2B2B2',
-              borderRadius: 50,
-              marginRight: 0,
-              marginTop: 15,
-              marginBottom: 15
-          }}/>
+        <div style={{
+          width: 56,
+          height: 56,
+          backgroundColor: '#B2B2B2',
+          borderRadius: 50,
+          marginRight: 0,
+          marginTop: 15,
+          marginBottom: 15,
+          overflow: 'hidden', // Ensures the image doesn't overflow the div
+      }}>
+          <img
+              src="LOGO.jpg" 
+              style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover', // Keeps the aspect ratio and covers the entire div
+              }}
+          />
+        </div>
           <div>
             <p style={{ fontSize: 18, color: '#5C5C5C', fontWeight: 600, margin: 10}}>Tariq Brown</p>
             <p style={{ fontSize: 18, fontWeight: 600, margin: 10}}>{props.message}</p>
@@ -144,15 +170,25 @@ function ChatBox() {
             }}
           />
           <button type="submit" style={{
-            backgroundColor: '#F3F3F3',
-            width: 70,
-            height: 70,
-            borderRadius: 20,
-            marginTop: 20,
-            marginBottom: 20,
-            marginLeft: 20,
-            color: '#5A2C00'
-          }}>Send</button>
+              backgroundColor: '#F3F3F3',
+              width: 70,
+              height: 70,
+              borderRadius: 20,
+              marginTop: 20,
+              marginBottom: 20,
+              marginLeft: 20,
+              color: '#5A2C00',
+              overflow: 'hidden', // Ensures the image doesn't overflow the button
+          }}>
+              <img
+                  src="send.png"
+                  style={{
+                      width: '50%',
+                      height: '50%',
+                      objectFit: 'cover', // Keeps the aspect ratio and covers the entire button
+                  }}
+              />
+          </button>
         </form>
       </div>
     );
