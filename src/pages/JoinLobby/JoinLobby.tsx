@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 
 export function JoinLobby() {
   const [boxes, setBoxes] : any[] = useState([]);
+  const [name, setName] = useState('Guest');
 
   const addBox = () => {
     // Create a new box element (a div) with the desired content
@@ -21,14 +22,32 @@ export function JoinLobby() {
 
   // Initialize the state with x boxes when the component is mounted
   React.useEffect(() => {
+    // Retrieve the name parameter from the URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const nameFromURL = searchParams.get('name') || 'Guest';
+
+    const formattedName = nameFromURL.replace(/\b\w/g, match => match.toUpperCase());
+
+    // Set the name synchronously before initializing the boxes
+    setName(() => formattedName);
+
     const initialBoxes = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 2; i++) {
+      let boxContent;
+      if (i === 0) {
+        boxContent = 'Host';
+      } else if (i === 1) {
+        boxContent = `${formattedName}`;
+      } else {
+        boxContent = `New Box ${i + 1}`;
+      }
+
       const newBox = (
         <div className="b" key={i}>
           <div className="profile-icon">
             <img src="logo.jpg" alt="Logo" className="logo-icon" />{' '}
           </div>
-          <div className="box-content">New Box {i + 1}</div>
+          <div className="box-content">{boxContent}</div>
         </div>
       );
       initialBoxes.push(newBox);
