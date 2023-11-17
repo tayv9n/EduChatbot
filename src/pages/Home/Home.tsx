@@ -1,23 +1,29 @@
 import './Home.css';
 import React, { useState } from 'react';
-import { Routes, Route, Outlet, Link } from 'react-router-dom';
-import { CreateLobby } from '../CreateLobby/CreateLobby';
-import { JoinLobby } from '../JoinLobby/JoinLobby';
-
 
 export function Home() {
   const [isPopupOpen, setPopupOpen] = useState(false);
   const [name, setName] = useState('');
+  const [actionType, setActionType] = useState<'join' | 'create' | undefined>();
 
-  const openPopup = () => setPopupOpen(true);
-  const closePopup = () => setPopupOpen(false);
+  const openPopup = (type: 'join' | 'create') => {
+    setActionType(type);
+    setPopupOpen(true);
+  };
+
+  const closePopup = () => {
+    setPopupOpen(false);
+  };
 
   const handleLinkClick = () => {
-    closePopup();
-
-    // Create a temporary anchor element
     const encodedName = encodeURIComponent(name);
     window.location.href = `joinlobby?name=${encodedName}`;
+  };
+
+  const handleCreateRoomClick = () => {
+    closePopup();
+    const encodedName = encodeURIComponent(name);
+    window.location.href = `createlobby?name=${encodedName}`;
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,8 +32,12 @@ export function Home() {
 
   const handleNameKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      e.preventDefault(); // Prevent form submission
-      handleLinkClick();
+      e.preventDefault();
+      if (actionType === 'join') {
+        handleLinkClick();
+      } else {
+        handleCreateRoomClick();
+      }
     }
   };
 
@@ -39,11 +49,9 @@ export function Home() {
       <main className="centerhome">
         <h1 className="welcome">Welcome to ChatBot!</h1>
 
-          <button className="button" onClick={openPopup}>Join Chatroom</button>
+          <button className="button" onClick={() => openPopup('join')}>Join Chatroom</button>
 
-        <a href="createlobby">
-          <button className="button">Create Chatroom</button>
-        </a>
+          <button className="button" onClick={() => openPopup('create')}>Create Chatroom</button>
 
         {isPopupOpen && (
         <div>
@@ -57,7 +65,9 @@ export function Home() {
               onKeyPress={handleNameKeyPress}
               placeholder="Enter your name"
             />
-            <button onClick={handleLinkClick}>Submit</button>
+            <button onClick={actionType === 'create' ? handleCreateRoomClick : handleLinkClick}>
+              Submit
+            </button>
           </div>
         </div>
         )}

@@ -1,9 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect} from 'react';
 import './CreateLobby.css';
+import { Link } from 'react-router-dom';
 import { BotSettings } from './BotSettings';
 import { LobbySettings } from './LobbySettings';
 
 export function CreateLobby() {
+  const [name, setName] = useState('Guest');
+
+  React.useEffect(() => {
+    // Retrieve the name parameter from the URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const nameFromURL = searchParams.get('name') || 'Guest';
+
+    const formattedName = nameFromURL.replace(/\b\w/g, match => match.toUpperCase());
+
+    // Set the name
+    setName(() => formattedName);
+  }, [setName]);
+
   return (
     <div>
 
@@ -15,9 +29,9 @@ export function CreateLobby() {
         <img src="logo.jpg" alt="Logo" className="logo" />
       </div>
 
-      <a href="chatroom">
+      <Link to={`/chatroom?name=${name}`}>
         <button className="top-right-buttoon">Start Chat</button>
-      </a>
+      </Link>
 
       <div className={'main-header'}>
         <p style={{ fontSize: 25, color: '#527785', marginTop: 20 }}>Join Code</p>

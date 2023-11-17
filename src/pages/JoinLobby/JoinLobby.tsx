@@ -1,5 +1,5 @@
 import './JoinLobby.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 export function JoinLobby() {
   const [boxes, setBoxes] : any[] = useState([]);
