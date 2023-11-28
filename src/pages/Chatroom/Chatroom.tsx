@@ -57,7 +57,7 @@ function SideBar() {
           height: 50,
           borderRadius: 10,
           marginBottom: 20,
-          color: '#5A2C00',
+          color: 'black',
           fontSize: 18,
           fontWeight: 600,
           display: 'flex',
@@ -101,6 +101,18 @@ function ChatBox() {
 
   const [messages, setMessages] = useState<JSX.Element[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [name, setName] = useState('Guest');
+
+  React.useEffect(() => {
+    // Retrieve the name parameter from the URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const nameFromURL = searchParams.get('name') || 'Guest';
+
+    const formattedName = nameFromURL.replace(/\b\w/g, match => match.toUpperCase());
+
+    // Set the name
+    setName(() => formattedName);
+  }, [setName]);
 
   const Message = (props : MessageProps) => {
     return (
@@ -126,7 +138,7 @@ function ChatBox() {
           />
         </div>
           <div>
-            <p style={{ fontSize: 18, color: '#5C5C5C', fontWeight: 600, margin: 10}}>Tariq Brown</p>
+            <p style={{ fontSize: 18, color: '#5C5C5C', fontWeight: 600, margin: 10}}>{name}</p>
             <p style={{ fontSize: 18, fontWeight: 600, margin: 10}}>{props.message}</p>
           </div>
 
