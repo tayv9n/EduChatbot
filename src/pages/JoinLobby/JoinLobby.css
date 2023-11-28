@@ -92,6 +92,7 @@
     font-weight: bold;
     font-size: 22px;
     margin-top: 30px;
+    justify-self: center;
   }
   
   .members-paragraph {
@@ -138,4 +139,8 @@
     text-align: left; /* Adjust text alignment to the left */
     flex-grow: 1; /* Allow the text to take up available space */
     margin: 10px;
+  }
+
+  .lobby-info {
+    display: grid;
   }
