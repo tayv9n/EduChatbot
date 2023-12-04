@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './Chatroom.css'
 
 export function Chatroom() {
@@ -7,13 +7,13 @@ export function Chatroom() {
     <div style={{
       backgroundColor: 'white'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#383838', fontSize: 25, fontWeight: 600, padding: 30 }}>
+      <div className='page-header'>
         <p>{'Menu'}</p>
         <p>{'Chatroom: LPRB'}</p>
       </div>
       <div style={{display: 'flex'}}>
-        <div style={{width: '20%', minWidth: 250}}><SideBar /></div>
-        <div style={{paddingRight: 50, width: '100%'}}>
+        <div className='side-bar'><SideBar /></div>
+        <div className='body-container'>
           <ChatHeader chatname='IN4MATX 117 Discussion' topic='Software Design'/>
           <ChatBox />
         </div>
@@ -36,94 +36,36 @@ function SideBar() {
 
   return (
     <div style={{padding: 20 }}>
-      <div style={{ 
-        display: 'flex',
-        height: 48,
-        backgroundColor: '#D7DBDB',
-        color: '#6C9EB1',
-        borderRadius: 15,
-        alignItems: 'center',
-        marginRight: 10,
-        marginLeft: 10,
-        justifyContent: 'center'
-      }}>
-        <div style={{width: 30,height: 30,backgroundImage: 'url("chatroom.png")', backgroundSize: 'cover',backgroundPosition: 'center'}} />
-        <p style={{marginLeft: 8, fontWeight: 600, fontSize: 22 }}>Chatroom</p>
+      <div className='chatroom-box'>
+        <div className='chatroom-img'/>
+        <p className='chatroom-word'>Chatroom</p>
       </div>
 
-      <div style={{ display: 'flex', marginLeft: '20%', marginTop: 20, marginBottom: 20}}>
-      <div style={{width: 30,height: 30,backgroundImage: 'url("settings.png")', backgroundSize: 'cover',backgroundPosition: 'center'}} />
-        <p style={{marginLeft: 10, fontSize: 22, fontWeight: 600, color: '#383838' }}>Settings</p>
+      <div className='settings-box'>
+      <div className='settings-img' />
+        <p className='settings-word'>Settings</p>
       </div>
 
-      <div style={{ display: 'flex', marginLeft: '20%', marginTop: 20, position: 'relative' }}>
-      <div style={{ width: 30, height: 30, backgroundImage: 'url("export.png")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-      <p
-        style={{
-          marginLeft: 10,
-          fontSize: 22,
-          fontWeight: 600,
-          color: '#383838',
-          cursor: 'pointer',
-        }}
-        onClick={togglePopup}
-      >
-        Export
-      </p>
+      <div className='export-box'>
+      <div className='export-img' />
+      <p className='export-word' onClick={togglePopup}>Export</p>
 
       {/* Popup menu */}
       <div
-        style={{
-          position: 'absolute',
-          top: 'calc(100% + 30px)',
-          left: 0,
-          display: isPopupVisible ? 'block' : 'none',
-          backgroundColor: '#fff',
-          border: '1px solid #ccc',
-          borderRadius: '5px',
-          boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
-          padding: '10px',
-          zIndex: 1,
-          textAlign: 'center',
-        }}
+        className='export-popup'
+        style={{ display: isPopupVisible ? 'block' : 'none' }}
       >
         <p>Export As .csv</p>
 
         {/* Export button */}
-        <button
-          style={{
-            marginTop: '10px',
-            padding: '10px 20px',
-            fontSize: '16px',
-            cursor: 'pointer',
-            backgroundColor: '#5A2C00', // Background color
-            color: '#fff', // Text color
-            borderRadius: '8px', // Border radius
-            border: 'none', // Remove border
-            outline: 'none', // Remove outline
-            transition: 'background-color 0.3s', // Smooth background color transition
-          }}
-          onClick={handleExport}
-        >
+        <button className='export-button' onClick={handleExport}>
           Export
         </button>
       </div>
     </div>
 
-      <a href="home" style={{ position: 'relative', top: 470, left: 20 }}>
-        <button style={{
-          backgroundColor: '#F3F3F3',
-          width: 150,
-          height: 50,
-          borderRadius: 10,
-          marginBottom: 20,
-          color: 'black',
-          fontSize: 18,
-          fontWeight: 600,
-          display: 'flex',
-          alignItems: 'center',
-          padding: '10px 20px', // Adjust padding as needed
-        }}>Quit Chatroom</button>
+      <a href="home" className='exit-position'>
+        <button className='exit-button'>Quit Chatroom</button>
       </a>
     </div>
   )
@@ -136,17 +78,7 @@ interface ChatHeaderProps {
 
 function ChatHeader(props : ChatHeaderProps) {
   return (
-    <div
-      style={{
-        backgroundColor: '#ECE7E0',
-        color: '#383838',
-        borderRadius: 20,
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        display: 'flex',
-        padding: 20
-      }}
-    >
+    <div className='chat-header'>
       <p>{props.chatname}</p>
       <p>{'Topic: '+ props.topic}</p>
     </div>
@@ -160,10 +92,11 @@ interface MessageProps {
 function ChatBox() {
 
   const [messages, setMessages] = useState<JSX.Element[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState('Guest');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Retrieve the name parameter from the URL
     const searchParams = new URLSearchParams(window.location.search);
     const nameFromURL = searchParams.get('name') || 'Guest';
@@ -172,24 +105,31 @@ function ChatBox() {
 
     // Set the name
     setName(() => formattedName);
+
   }, [setName]);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const Message = (props : MessageProps) => {
     return (
       <div>
-        <div style={{display: 'flex', alignItems: 'center'}}>
-        <div style={{
-          width: 56,
-          height: 56,
-          backgroundColor: '#B2B2B2',
-          borderRadius: 50,
-          marginRight: 0,
-          marginTop: 15,
-          marginBottom: 15,
-          overflow: 'hidden', // Ensures the image doesn't overflow the div
-      }}>
+        <div className='message-position'>
+        <div className='message-picture'>
           <img
-              src="LOGO.jpg" 
+              src="LOGO.jpg"
+              alt="Logo" 
               style={{
                   width: '100%',
                   height: '100%',
@@ -198,12 +138,12 @@ function ChatBox() {
           />
         </div>
           <div>
-            <p style={{ fontSize: 18, color: '#5C5C5C', fontWeight: 600, margin: 10}}>{name}</p>
-            <p style={{ fontSize: 18, fontWeight: 600, margin: 10}}>{props.message}</p>
+            <p className='message-user'>{name}</p>
+            <p className='message-text'>{props.message}</p>
           </div>
 
         </div>
-        <hr style={{ borderTop: '2px solid #D9D9D9', borderLeft: 'none' }} />
+        <hr className='message-line'/>
       </div>
     )
   }
@@ -225,35 +165,16 @@ function ChatBox() {
         <form onSubmit={handleSubmit} style={{ display: 'flex', justifyContent: 'space-between'}}>
           <input
             type="text"
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Message"
-            style={{
-              height: 56,
-              width: '100%',
-              overflow: 'hidden',
-              background: '#F3F3F3',
-              borderRadius: 20,
-              marginTop: 20,
-              marginBottom: 20,
-              fontSize: 22,
-              padding: 5,
-              paddingLeft: 10
-            }}
+            className='message-input'
           />
-          <button type="submit" style={{
-              backgroundColor: '#F3F3F3',
-              width: 70,
-              height: 70,
-              borderRadius: 20,
-              marginTop: 20,
-              marginBottom: 20,
-              marginLeft: 20,
-              color: '#5A2C00',
-              overflow: 'hidden', // Ensures the image doesn't overflow the button
-          }}>
+          <button type="submit" className='message-button'>
               <img
                   src="send.png"
+                  alt='Send'
                   style={{
                       width: '50%',
                       height: '50%',
@@ -268,16 +189,11 @@ function ChatBox() {
 
   return (
     <div>
-      <div style={{
-        backgroundColor: '#FBFBFB',
-        height: 550,
-        minWidth: 550,
-        borderRadius: 20,
-        paddingRight: 20,
-        paddingLeft: 20,
-        overflowY: 'auto'
-      }}>
-        {messages}
+      <div className='chatbox-container'>
+        {messages.map((message, index) => (
+          <div key={index}>{message}</div>
+        ))}
+        <div ref={messagesEndRef} />
       </div>
       <MessageInput />
     </div>
