@@ -3,11 +3,25 @@ import './CreateLobby.css';
 import { Link } from 'react-router-dom';
 import { BotSettings } from './BotSettings';
 import { LobbySettings } from './LobbySettings';
+import io from 'socket.io-client';
+
+const SERVER_URL = 'http://localhost:4000';
+const socket = io(SERVER_URL);
 
 export function CreateLobby() {
   const [name, setName] = useState('Guest');
+  const [lobbyId, setLobbyId] = useState('. . . .');
+  const [chatTime, setChatTime] = useState(10);
 
-  React.useEffect(() => {
+  useEffect(() => {
+      socket.emit('createLobby');
+  }, []);
+
+  socket.on('lobbyCreated', (newLobbyId) => {
+    setLobbyId(newLobbyId);
+  });
+
+  useEffect(() => {
     // Retrieve the name parameter from the URL
     const searchParams = new URLSearchParams(window.location.search);
     const nameFromURL = searchParams.get('name') || 'Guest';
@@ -39,14 +53,15 @@ export function CreateLobby() {
           className={'box-container'}
           style={{ marginTop: 12, width: 285, height: 78, margin: 'auto' }}
         >
-          <p style={{ fontSize: 36, color: '#383838' }}>L P R B</p>
+          <p style={{ fontSize: 36, color: '#383838' }}>{lobbyId}</p>
         </div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', padding: 40 }}>
         <BotSettings />
-        <LobbySettings />
+        <LobbySettings setChatTime={setChatTime} userCount={5}/>
       </div>
+
     </div>
   );
 }
