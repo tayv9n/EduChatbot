@@ -73,6 +73,7 @@
     display: flex;
     margin-left: 20%;
     margin-top: 20px;
+    position: relative;
 }
 
 .export-img {
@@ -88,6 +89,33 @@
     font-size: 22px;
     font-weight: 600;
     color: #383838;
+    cursor: 'pointer';
+}
+
+.export-popup {
+    position: absolute;
+    top: calc(100% + 30px);
+    left: 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    z-index: 1px;
+    text-align: center;
+}
+
+.export-button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #5A2C00;
+    color: #fff;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    transition: background-color 0.3s;
 }
 
 .exit-position {

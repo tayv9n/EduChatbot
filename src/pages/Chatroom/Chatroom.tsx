@@ -46,55 +46,19 @@ function SideBar() {
         <p className='settings-word'>Settings</p>
       </div>
 
-      <div style={{ display: 'flex', marginLeft: '20%', marginTop: 20, position: 'relative' }}>
-      <div style={{ width: 30, height: 30, backgroundImage: 'url("export.png")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-      <p
-        style={{
-          marginLeft: 10,
-          fontSize: 22,
-          fontWeight: 600,
-          color: '#383838',
-          cursor: 'pointer',
-        }}
-        onClick={togglePopup}
-      >
-        Export
-      </p>
+      <div className='export-box'>
+      <div className='export-img' />
+      <p className='export-word' onClick={togglePopup}>Export</p>
 
       {/* Popup menu */}
       <div
-        style={{
-          position: 'absolute',
-          top: 'calc(100% + 30px)',
-          left: 0,
-          display: isPopupVisible ? 'block' : 'none',
-          backgroundColor: '#fff',
-          border: '1px solid #ccc',
-          borderRadius: '5px',
-          boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
-          padding: '10px',
-          zIndex: 1,
-          textAlign: 'center',
-        }}
+        className='export-popup'
+        style={{ display: isPopupVisible ? 'block' : 'none' }}
       >
         <p>Export As .csv</p>
 
         {/* Export button */}
-        <button
-          style={{
-            marginTop: '10px',
-            padding: '10px 20px',
-            fontSize: '16px',
-            cursor: 'pointer',
-            backgroundColor: '#5A2C00', // Background color
-            color: '#fff', // Text color
-            borderRadius: '8px', // Border radius
-            border: 'none', // Remove border
-            outline: 'none', // Remove outline
-            transition: 'background-color 0.3s', // Smooth background color transition
-          }}
-          onClick={handleExport}
-        >
+        <button className='export-button' onClick={handleExport}>
           Export
         </button>
       </div>
