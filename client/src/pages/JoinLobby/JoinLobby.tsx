@@ -1,5 +1,9 @@
 import './JoinLobby.css';
 import React, { useState } from 'react';
+import io from 'socket.io-client';
+
+const SERVER_URL = 'http://localhost:4000';
+const socket = io(SERVER_URL);
 
 interface LobbbyInformationProps {
   users : string[];
@@ -25,21 +29,23 @@ export function JoinLobby() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     setLobbyState('Waiting');
-
-    // call api to JOIN LOBBY, RETURN CALL WILL INCLUDE LOBBY INFO AND LIST OF USERS INCLUDING THIS ONE
-
-    // CHECK IF LOBBY EXISTS
-    if (code === 'asdf') {
+  
+    // Emit a Socket.IO event to join the lobby
+    socket.emit('joinLobby', code, name);
+  
+    // Listen for the server's response
+    socket.on('joinedLobby', (guid) => {
       setLobbyState('Joined');
       setDisabled(true);
-      // SET LOBBY INFORMATION
-    } else {
+      // You might want to do additional handling here based on the server's response
+    });
+  
+    socket.on('lobbyError', (error) => {
+      console.error('Error joining lobby:', error);
       setLobbyState('Error');
-    }
-
-    //TODO: ADD STATEMENT IF LOBBY CODE DOESNT EXIST AND IF API CALL RETURNS AN ERROR
+    });
   };
 
   return (
