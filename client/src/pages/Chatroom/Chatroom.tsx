@@ -1,13 +1,14 @@
 import React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import './Chatroom.css'
-import io from 'socket.io-client';
 import { Socket } from 'socket.io-client';
+// import { Socket } from 'socket.io';
+
 interface ChatroomProps {
-  socket : Socket;
+  socket: Socket;
 }
 
-export function Chatroom(props : ChatroomProps) {
+export function Chatroom(props: ChatroomProps) {
   const [code, setCode] = useState('');
 
   useEffect(() => {
@@ -30,10 +31,10 @@ export function Chatroom(props : ChatroomProps) {
         <p>{'Menu'}</p>
         <p>{'Chatroom: ' + code}</p>
       </div>
-      <div style={{display: 'flex'}}>
+      <div style={{ display: 'flex' }}>
         <div className='side-bar'><SideBar /></div>
         <div className='body-container'>
-          <ChatHeader chatname='IN4MATX 117 Discussion' topic='Software Design'/>
+          <ChatHeader chatname='IN4MATX 117 Discussion' topic='Software Design' />
           <ChatBox socket={props.socket} code={code} />
         </div>
       </div>
@@ -56,34 +57,34 @@ function SideBar() {
   };
 
   return (
-    <div style={{padding: 20 }}>
+    <div style={{ padding: 20 }}>
       <div className='chatroom-box'>
-        <div className='chatroom-img'/>
+        <div className='chatroom-img' />
         <p className='chatroom-word'>Chatroom</p>
       </div>
 
       <div className='settings-box'>
-      <div className='settings-img' />
+        <div className='settings-img' />
         <p className='settings-word'>Settings</p>
       </div>
 
       <div className='export-box'>
-      <div className='export-img' />
-      <p className='export-word' onClick={togglePopup}>Export</p>
+        <div className='export-img' />
+        <p className='export-word' onClick={togglePopup}>Export</p>
 
-      {/* Popup menu */}
-      <div
-        className='export-popup'
-        style={{ display: isPopupVisible ? 'block' : 'none' }}
-      >
-        <p>Export As .csv</p>
+        {/* Popup menu */}
+        <div
+          className='export-popup'
+          style={{ display: isPopupVisible ? 'block' : 'none' }}
+        >
+          <p>Export As .csv</p>
 
-        {/* Export button */}
-        <button className='export-button' onClick={handleExport}>
-          Export
-        </button>
+          {/* Export button */}
+          <button className='export-button' onClick={handleExport}>
+            Export
+          </button>
+        </div>
       </div>
-    </div>
 
       <a href="home" className='exit-position'>
         <button className='exit-button'>Quit Chatroom</button>
@@ -97,55 +98,80 @@ interface ChatHeaderProps {
   topic: string
 }
 
-function ChatHeader(props : ChatHeaderProps) {
+function ChatHeader(props: ChatHeaderProps) {
   return (
     <div className='chat-header'>
       <p>{props.chatname}</p>
-      <p>{'Topic: '+ props.topic}</p>
+      <p>{'Topic: ' + props.topic}</p>
     </div>
   );
 }
 
 interface MessageProps {
-  user : string;
-  message : string;
+  user: string;
+  message: string;
 }
 
 interface MessageDataProps {
   text: string;
   sender: string;
-  lobbyId : string;
+  lobbyId: string;
 };
 
 interface ChatBoxProps {
   code: string;
-  socket: Socket
+  socket: Socket;
 }
 
-function ChatBox(props : ChatBoxProps) {
+function ChatBox(props: ChatBoxProps) {
 
   const [messages, setMessages] = useState<JSX.Element[]>([]);
-  const [name, setName] = useState('Guest');
+  const [name, setName] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Retrieve the name parameter from the URL
+    // Emit joinRoom when the component mounts or roomId/socket changes
+    if (props.socket && props.code) {
+      props.socket.emit('joinRoom', props.code);
+    }
+
+    // Optionally, handle leaving the room when the component unmounts
+    return () => {
+      if (props.socket && props.code) {
+        props.socket.emit('leaveRoom', props.code);
+      }
+    };
+  }, [props.socket, props.code]);
+
+  useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    const nameFromURL = searchParams.get('name') || 'Guest';
+    const nameFromURL = searchParams.get('name');
 
-    const formattedName = nameFromURL.replace(/\b\w/g, match => match.toUpperCase());
 
-    // Set the name
-    setName(() => formattedName);
+    if (nameFromURL !== null) {
+      const decodedName = decodeURIComponent(nameFromURL);
+      // Now decodedName is guaranteed to be a string
+      setName(decodedName);
+    } else {
+      // Handle the case where 'name' parameter is not present in the URL
+      // setName('Guest');
+    }
 
+    // alert(nameFromURL); // a
   }, [setName]);
 
   useEffect(() => {
-    props.socket.on('message', (messageData : MessageDataProps) => {
+    props.socket.on('connect', () => {
+      console.log('Connected to server!');
+    });
+  }, [props.socket]);
+
+  useEffect(() => {
+    props.socket.on('message', (messageData: MessageDataProps) => {
 
       console.log('messsafinggg');
-      setMessages([...messages, <Message user={messageData.sender} message={messageData.text}/>]);
+      setMessages(prevMessages => [...prevMessages, <Message user={messageData.sender} message={messageData.text} />]);
     });
 
     return () => {
@@ -167,28 +193,28 @@ function ChatBox(props : ChatBoxProps) {
     }
   };
 
-  const Message = (props : MessageProps) => {
+  const Message = (props: MessageProps) => {
     return (
       <div>
         <div className='message-position'>
-        <div className='message-picture'>
-          <img
+          <div className='message-picture'>
+            <img
               src="LOGO.jpg"
-              alt="Logo" 
+              alt="Logo"
               style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover', // Keeps the aspect ratio and covers the entire div
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover', // Keeps the aspect ratio and covers the entire div
               }}
-          />
-        </div>
+            />
+          </div>
           <div>
             <p className='message-user'>{props.user}</p>
             <p className='message-text'>{props.message}</p>
           </div>
 
         </div>
-        <hr className='message-line'/>
+        <hr className='message-line' />
       </div>
     )
   }
@@ -199,7 +225,7 @@ function ChatBox(props : ChatBoxProps) {
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       if (input === '') {
-        return; 
+        return;
       }
 
       let messageData = {
@@ -208,15 +234,17 @@ function ChatBox(props : ChatBoxProps) {
         lobbyId: props.code
       };
 
+      console.log(` LOBBY ID: ${props.code}, sending ${input}`);
+
       props.socket.emit('lobbyMessage', props.code, messageData);
 
-      setMessages([...messages, <Message user={name} message={input}/>]);
+      // setMessages([...messages, <Message user={name} message={input} />]);
       setInput('');
     };
-  
+
     return (
       <div>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', justifyContent: 'space-between'}}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', justifyContent: 'space-between' }}>
           <input
             type="text"
             ref={inputRef}
@@ -226,15 +254,15 @@ function ChatBox(props : ChatBoxProps) {
             className='message-input'
           />
           <button type="submit" className='message-button'>
-              <img
-                  src="send.png"
-                  alt='Send'
-                  style={{
-                      width: '50%',
-                      height: '50%',
-                      objectFit: 'cover', // Keeps the aspect ratio and covers the entire button
-                  }}
-              />
+            <img
+              src="send.png"
+              alt='Send'
+              style={{
+                width: '50%',
+                height: '50%',
+                objectFit: 'cover', // Keeps the aspect ratio and covers the entire button
+              }}
+            />
           </button>
         </form>
       </div>

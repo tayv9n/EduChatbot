@@ -15,9 +15,9 @@ export function App() {
       <Routes>
         <Route index element={<Home />} />
         <Route path="/home" element={<Home />} />
-        <Route path="/createlobby" element={<CreateLobby socket={socket}/>} />
-        <Route path="/joinlobby" element={<JoinLobby socket={socket}/>} />
-        <Route path="/chatroom" element={<Chatroom socket={socket}/>} />
+        <Route path="/createlobby" element={<CreateLobby socket={socket} />} />
+        <Route path="/joinlobby" element={<JoinLobby socket={socket} />} />
+        <Route path="/chatroom" element={<Chatroom socket={socket} />} />
         <Route path="*" element={<ErrorPage />} />
       </Routes>
     </div>

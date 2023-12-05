@@ -35,27 +35,35 @@ io.on('connection', (socket) => {
     // Lobby creation
     socket.on('createLobby', async (username) => {
         const guid = generateGUID();
-        lobbies[guid] = {
-            //chatroomName: "",
-            hostUserame: username,
-            users: { [username]: socket.id }, // dictionary of users
-            //chatStartedTime: -1, // unix time used to get running time by subtracting current time minus this
-            //chatbot: null,
-            //botSettings: {
-                //assertiveness: -1,
-                //botName: "",
-                //topicName: "",
-            //},
-        };
+        // lobbies[guid] = {
+        //     //chatroomName: "",
+        //     hostUserame: username,
+        //     users: { [username]: socket.id }, // dictionary of users
+        //     //chatStartedTime: -1, // unix time used to get running time by subtracting current time minus this
+        //     //chatbot: null,
+        //     //botSettings: {
+        //     //assertiveness: -1,
+        //     //botName: "",
+        //     //topicName: "",
+        //     //},
+        // };
+        lobbies[guid] = { users: {}, threadCreated: false };
         socket.emit('lobbyCreated', guid);
         console.log(` > CREATING LOBBY: ${guid}, host: ${username}`);
         console.log(lobbies);
+        console.log(` > LOBBY CREATED`);
+    });
+
+    socket.on('testBroadcast', () => {
+        const testMessage = "This is a test message to all users.";
+        io.emit('message', { sender: 'Server', text: testMessage });
+        console.log(` > BROADCASTING TEST MESSAGE TO ALL USERS`);
     });
 
     // Joining a lobby
     socket.on('joinLobby', async (guid, username) => {
         console.log(` > Request to join: ${guid} by user: ${username}`);
-        console.log(lobbies);
+        // console.log(lobbies);
         if (lobbies[guid] && !lobbies[guid].users[username]) {
             socket.join(guid);
             lobbies[guid].users[username] = socket.id;
@@ -72,14 +80,25 @@ io.on('connection', (socket) => {
     // be sure to do the same with the chatbot messages so they
     // end up in the correct room.
     socket.on('lobbyMessage', async (guid, messageData) => {
-        console.log(lobbies);
-        console.log(messageData.text);
-        if (lobbies[guid]) {
-            socket.to(guid).emit('message', messageData);
+        const testMessage = "This is a test message to all users.";
 
+        // =================================== THIS IS A BAND AID FIX ===================================
+        io.emit('message', messageData);
+        console.log(` > BROADCASTING TEST MESSAGE TO ALL USERS`);
+        // =================================== THIS IS A BAND AID FIX ===================================
+
+
+        // console.log(lobbies);
+        console.log(`LOBBIES: ${lobbies}`);
+        console.log(`MSG: ${messageData.text} FROM USER: ${messageData.sender} ROOM IS: ${messageData.lobbyId}`)
+        console.log(`LOBBY IN QUESTION:`);
+        console.log(lobbies[guid]);
+        if (lobbies[guid]) {
+            io.to(guid).emit('message', messageData);
+            console.log(` > BROADCASTING: ${messageData.text} FROM: ${messageData.sender}; TO: ${lobbies[guid].users[lobbies[guid].hostUserame]}`);
             //let respond = lobbies[guid].chatbot.botMessageListener(messageData.sender, messageData.text);
             //if (respond) {
-                //io.to(guid).emit('message', { sender: lobbies[guid].chatbot, text: respond });
+            //io.to(guid).emit('message', { sender: lobbies[guid].chatbot, text: respond });
             //}
         }
     });
@@ -101,20 +120,22 @@ io.on('connection', (socket) => {
             socket.to(guid).emit('chatStarted');
 
             if (!lobbies[guid].botInitialized) {
+                console.log(` > LOBBY STARTED, CODE: ${guid}`);
                 console.log(lobbies[guid]);
-                console.log(lobbyData);
+                // console.log(lobbyData);
                 let chatbotInstance = new ChatBot(lobbies[guid].users, lobbyData.topic, lobbyData.botname, lobbyData.assertiveness);
-                console.log(lobbies[guid]);
-                let success = await chatbotInstance.initializePrompting();
-                console.log(lobbies[guid]);
+                // console.log(lobbies[guid]);
+                // let success = await chatbotInstance.initializePrompting();
+                // console.log(lobbies[guid]);
                 // TODO : ERROR HANDLING
-                console.log(success);
+                // console.log(success);
                 let botPrompt = await chatbotInstance.getInitialQuestion();
-                console.log(botPrompt);
+                // console.log(botPrompt);
                 io.to(guid).emit('message', { text: botPrompt, sender: chatbotInstance.botname });
                 //lobbies[guid].botInitialized = true;
-                console.log(lobbies[guid]);
+                // console.log(lobbies[guid]);
                 //lobbies[guid].chatbot = chatbotInstance;
+                console.log(` > LOBBY STARTED!`);
             }
         }
     });
