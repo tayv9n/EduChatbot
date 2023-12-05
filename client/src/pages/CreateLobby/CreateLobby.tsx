@@ -1,23 +1,28 @@
 import React, { useState, useEffect} from 'react';
 import './CreateLobby.css';
-import { Link } from 'react-router-dom';
 import { BotSettings } from './BotSettings';
 import { LobbySettings } from './LobbySettings';
 import io from 'socket.io-client';
+import { Socket } from 'socket.io-client';
 
-const SERVER_URL = 'http://localhost:4000';
-const socket = io(SERVER_URL);
+interface CreateLobbyProps {
+  socket : Socket;
+}
 
-export function CreateLobby() {
+export function CreateLobby(props : CreateLobbyProps) {
   const [name, setName] = useState('Guest');
   const [lobbyId, setLobbyId] = useState('. . . .');
   const [chatTime, setChatTime] = useState(10);
+  const [botName, setBotName] = useState('ChatZot');
+  const [assertiveness, setAssertiveness] = useState(2);
+  const [topic, setTopic] = useState('');
+  const [chatName, setChatName] = useState('Discussion');
 
   useEffect(() => {
-      socket.emit('createLobby');
+      props.socket.emit('createLobby', name);
   }, []);
 
-  socket.on('lobbyCreated', (newLobbyId) => {
+  props.socket.on('lobbyCreated', (newLobbyId) => {
     setLobbyId(newLobbyId);
   });
 
@@ -34,8 +39,15 @@ export function CreateLobby() {
 
   const handleChatroomStart = () => {
 
-
+    let lobbyData = {
+      botname: botName,
+      chatLength: chatTime,
+      assertiveness: assertiveness,
+      topic: topic,
+      chatName: chatName
+    }
     // send bot settings thru socket
+    props.socket.emit('updateBotSettings', lobbyId, lobbyData);
     
     if (lobbyId !== '. . . .') {
       const encodedId = encodeURIComponent(lobbyId);
@@ -68,8 +80,8 @@ export function CreateLobby() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', padding: 40 }}>
-        <BotSettings />
-        <LobbySettings setChatTime={setChatTime} userCount={5}/>
+        <BotSettings setBotName={setBotName} setAssertiveness={setAssertiveness}/>
+        <LobbySettings setChatTime={setChatTime} setTopic={setTopic} setChatName={setChatName} userCount={5}/>
       </div>
     </div>
   );

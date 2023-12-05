@@ -2,11 +2,12 @@ import React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import './Chatroom.css'
 import io from 'socket.io-client';
+import { Socket } from 'socket.io-client';
+interface ChatroomProps {
+  socket : Socket;
+}
 
-const SERVER_URL = 'http://localhost:4000';
-const socket = io(SERVER_URL);
-
-export function Chatroom() {
+export function Chatroom(props : ChatroomProps) {
   const [code, setCode] = useState('');
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export function Chatroom() {
         <div className='side-bar'><SideBar /></div>
         <div className='body-container'>
           <ChatHeader chatname='IN4MATX 117 Discussion' topic='Software Design'/>
-          <ChatBox code={code}/>
+          <ChatBox socket={props.socket} code={code} />
         </div>
       </div>
     </div>
@@ -113,11 +114,12 @@ interface MessageProps {
 interface MessageDataProps {
   text: string;
   sender: string;
-  lobbyId: string;
+  lobbyId : string;
 };
 
 interface ChatBoxProps {
   code: string;
+  socket: Socket
 }
 
 function ChatBox(props : ChatBoxProps) {
@@ -140,16 +142,16 @@ function ChatBox(props : ChatBoxProps) {
   }, [setName]);
 
   useEffect(() => {
-    // Set up event listener for incoming messages
-    socket.on('message', (messageData : MessageDataProps) => {
-        setMessages([...messages, <Message user={messageData.sender} message={messageData.text}/>]);
+    props.socket.on('message', (messageData : MessageDataProps) => {
+
+      console.log('messsafinggg');
+      setMessages([...messages, <Message user={messageData.sender} message={messageData.text}/>]);
     });
 
-    // Clean up on unmount
     return () => {
-        socket.off('message');
+      props.socket.off('message');
     };
-}, [socket]);
+  }, [props.socket]);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -206,7 +208,7 @@ function ChatBox(props : ChatBoxProps) {
         lobbyId: props.code
       };
 
-      socket.emit('lobbyMessage', props.code, messageData);
+      props.socket.emit('lobbyMessage', props.code, messageData);
 
       setMessages([...messages, <Message user={name} message={input}/>]);
       setInput('');

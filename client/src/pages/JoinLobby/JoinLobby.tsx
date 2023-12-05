@@ -1,15 +1,16 @@
 import './JoinLobby.css';
 import React, { useState } from 'react';
 import io from 'socket.io-client';
-
-const SERVER_URL = 'http://localhost:4000';
-const socket = io(SERVER_URL);
+import { Socket } from 'socket.io-client';
+interface JoinLobbyProps {
+  socket : Socket;
+}
 
 interface LobbbyInformationProps {
   users : string[];
 }
 
-export function JoinLobby() {
+export function JoinLobby(props : JoinLobbyProps) {
   const [name, setName] = useState('Guest');
   const [code, setCode] = useState('');
   const [disabled, setDisabled] = useState(false);
@@ -34,18 +35,18 @@ export function JoinLobby() {
     setLobbyState('Waiting');
   
     // Emit a Socket.IO event to join the lobby
-    socket.emit('joinLobby', code, name);
+    props.socket.emit('joinLobby', code, name);
   
     // Listen for the server's response
-    socket.on('joinedLobby', (guid) => {
+    props.socket.on('joinedLobby', (guid) => {
       // Emit a Socket.IO event to get list of users
-      socket.emit('getUserListOfLobby', guid)
+      props.socket.emit('getUserListOfLobby', guid)
 
       setLobbyState('Joined');
       setDisabled(true);
     });
   
-    socket.on('lobbyError', (error) => {
+    props.socket.on('lobbyError', (error) => {
       console.error('Error joining lobby:', error);
       setLobbyState('Error');
     });
@@ -56,7 +57,7 @@ export function JoinLobby() {
       setUserList(userlist);
   
       // Turn off the event listener after it has been used once
-      socket.off('userList', handleUserList);
+      props.socket.off('userList', handleUserList);
     };
   
     const handleChatStarted = () => {
@@ -64,18 +65,18 @@ export function JoinLobby() {
       window.location.href = `chatroom?name=${name}&id=${encodedId}`;
   
       // Turn off the event listener after it has been used once
-      socket.off('chatStarted', handleChatStarted);
+      props.socket.off('chatStarted', handleChatStarted);
     };
   
     // Set up event listeners
-    socket.on('userList', handleUserList);
-    socket.on('chatStarted', handleChatStarted);
+    props.socket.on('userList', handleUserList);
+    props.socket.on('chatStarted', handleChatStarted);
   
     // Clean up event listeners when the component unmounts
     return () => {
       // Turn off event listeners
-      socket.off('userList', handleUserList);
-      socket.off('chatStarted', handleChatStarted);
+      props.socket.off('userList', handleUserList);
+      props.socket.off('chatStarted', handleChatStarted);
     };
   }, [code, name]);
 

@@ -2,14 +2,16 @@ const { OpenAI } = require("openai");
 const fs = require('fs');
 
 const openai = new OpenAI({
-    apiKey: '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'
+    apiKey: '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'
 });
 
 class ChatBot {
-    constructor(users, topic) {
+    constructor(users, topic, botname='ChatZot', assertiveness=2) {
         this.users = users
         this.topic = topic
         this.initialQuestion = '';
+        this.botname = botname;
+        this.assertiveness = assertiveness;
 
         console.log("initialized variables");
 
@@ -17,14 +19,12 @@ class ChatBot {
         this.countPerUser = [];
         this.messageCount = 0;
 
-        this.behaviorPrompt = readFileContent("behavior_prompt.txt");
-        this.chimePrompt = readFileContent("chime_prompt.txt");
+        this.behaviorPrompt = readFileContent("chatbot/behavior_prompt.txt");
+        this.chimePrompt = readFileContent("chatbot/chime_prompt.txt");
 
         this.behaviorPrompt = this.behaviorPrompt.replace("{{users}}", users.toString());
         this.behaviorPrompt = this.behaviorPrompt.replace("{{topic}}", topic);
-        this.chimePrompt = this.chimePrompt.replace("{{botname}}", "ChatZot"); // NEED TO ADD BOT NAME
-
-        console.log(this.behaviorPrompt);
+        this.chimePrompt = this.chimePrompt.replace("{{botname}}", botname); // NEED TO ADD BOT NAME
 
         this.behaviorMessages = [];
         this.chimeMessages = [{role: "system", content: this.chimePrompt}];
@@ -44,17 +44,6 @@ class ChatBot {
         // messageRatios: ratios of users and their participation
         // messageCount: count of messages
 
-    }
-
-    destructor() {
-
-        //Deleting bots
-        //openai.beta.assistants.del(this.behaviorLayer.id).then((e) => {console.log(e);});
-        //openai.beta.assistants.del(this.chimeLayer.id).then((e) => {console.log(e);});
-
-        //Deleting threads
-        //openai.beta.threads.del(this.behaviorLayerThread.id).then((e) => {console.log(e);});
-        //openai.beta.threads.del(this.chimeLayerThread.id).then((e) => {console.log(e);});
     }
 
     async initializePrompting() {
@@ -187,15 +176,8 @@ class ChatBot {
         // 3: inactivity
     }
 
-    getInitialQuestion(mode) {
-        if (mode == 0) {
-            return this.initialQuestion;
-        } else if (mode == 1) {
-
-            // SOCKET IO SEND MESSAGE
-
-            return this.initialQuestion;
-        }
+    getInitialQuestion() {
+        return this.initialQuestion;
     }
 
     async waitForRunCompletion(threadId, runId) {
@@ -225,12 +207,3 @@ function readFileContent(fileName) {
     return null;
   }
 }
-
-let userlist = ['Tariq', 'Tay', 'Kai', 'Neeraja', 'Kevin'];
-let messRatio = [0.2, 0.1, 0.2, 0.2, 0.3];
-
-bot = new ChatBot(userlist, 'AI');
-bot.messageRatios = messRatio;
-bot.messageCount = 20;
-
-bot.participationTracker('Tariq');

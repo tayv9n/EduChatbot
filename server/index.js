@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const { OpenAI } = require("openai");
-
+const ChatBot = require("./chatbot/chatbot.js");
 // Initialize the express application
 const app = express();
 
@@ -33,17 +33,29 @@ function generateGUID() {
 // Socket.io logic
 io.on('connection', (socket) => {
     // Lobby creation
-    socket.on('createLobby', async () => {
+    socket.on('createLobby', async (username) => {
         const guid = generateGUID();
-        lobbies[guid] = { users: {}, threadCreated: false };
+        lobbies[guid] = {
+            //chatroomName: "",
+            hostUserame: username,
+            users: { [username]: socket.id }, // dictionary of users
+            //chatStartedTime: -1, // unix time used to get running time by subtracting current time minus this
+            //chatbot: null,
+            //botSettings: {
+                //assertiveness: -1,
+                //botName: "",
+                //topicName: "",
+            //},
+        };
         socket.emit('lobbyCreated', guid);
-        console.log(` > CREATING LOBBY: ${guid}`);
+        console.log(` > CREATING LOBBY: ${guid}, host: ${username}`);
+        console.log(lobbies);
     });
 
     // Joining a lobby
     socket.on('joinLobby', async (guid, username) => {
         console.log(` > Request to join: ${guid} by user: ${username}`);
-
+        console.log(lobbies);
         if (lobbies[guid] && !lobbies[guid].users[username]) {
             socket.join(guid);
             lobbies[guid].users[username] = socket.id;
@@ -60,8 +72,64 @@ io.on('connection', (socket) => {
     // be sure to do the same with the chatbot messages so they
     // end up in the correct room.
     socket.on('lobbyMessage', async (guid, messageData) => {
+        console.log(lobbies);
+        console.log(messageData.text);
         if (lobbies[guid]) {
             socket.to(guid).emit('message', messageData);
+
+            //let respond = lobbies[guid].chatbot.botMessageListener(messageData.sender, messageData.text);
+            //if (respond) {
+                //io.to(guid).emit('message', { sender: lobbies[guid].chatbot, text: respond });
+            //}
+        }
+    });
+
+    // pass in a lobbyID, and get back the host name of the lobby
+    socket.on('getHostName', async (guid) => {
+        if (lobbies[guid]) {
+            const hostName = lobbies[guid].hostUsername;
+            // Sending back an object with the host name
+            socket.emit('hostNameResponse', { hostName });
+        } else {
+            // Handle the case where the lobby doesn't exist
+            socket.emit('hostNameResponse', { error: 'Lobby not found' });
+        }
+    });
+
+    socket.on('updateBotSettings', async (guid, lobbyData) => {
+        if (lobbies[guid]) {
+            socket.to(guid).emit('chatStarted');
+
+            if (!lobbies[guid].botInitialized) {
+                console.log(lobbies[guid]);
+                console.log(lobbyData);
+                let chatbotInstance = new ChatBot(lobbies[guid].users, lobbyData.topic, lobbyData.botname, lobbyData.assertiveness);
+                console.log(lobbies[guid]);
+                let success = await chatbotInstance.initializePrompting();
+                console.log(lobbies[guid]);
+                // TODO : ERROR HANDLING
+                console.log(success);
+                let botPrompt = await chatbotInstance.getInitialQuestion();
+                console.log(botPrompt);
+                io.to(guid).emit('message', { text: botPrompt, sender: chatbotInstance.botname });
+                //lobbies[guid].botInitialized = true;
+                console.log(lobbies[guid]);
+                //lobbies[guid].chatbot = chatbotInstance;
+            }
+        }
+    });
+
+    // returns a list of users in the lobby
+    socket.on('getUserListOfLobby', async (guid) => {
+        if (lobbies[guid] && lobbies[guid].users) {
+            // Get all usernames from the 'users' object
+            const userList = Object.keys(lobbies[guid].users);
+
+            // Send back the list of usernames
+            socket.emit('userListOfLobbyResponse', { userList });
+        } else {
+            // Handle the case where the lobby doesn't exist or has no users
+            socket.emit('userListOfLobbyResponse', { error: 'Lobby not found or no users in lobby' });
         }
     });
 

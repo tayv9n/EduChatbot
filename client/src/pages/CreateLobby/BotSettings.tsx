@@ -4,11 +4,26 @@ import { Slider } from '@mui/material';
 
 import './CreateLobby.css';
 
-export function BotSettings() {
-  const [messageLength, setMessageLength] = useState(50);
-  const [messageFreq, setMessageFreq] = useState(50);
+type StateSetter<T> = React.Dispatch<React.SetStateAction<T>>;
+interface BotSettingsProps {
+  setBotName: StateSetter<string>;
+  setAssertiveness: StateSetter<number>;
+}
+
+export function BotSettings(props : BotSettingsProps) {
 
   const marks = [{label: 'Low', value: 1}, {label: 'Medium', value: 2}, {label: 'High', value: 3}];
+
+  const handleAssertChange = (event: Event, newValue: number | number[]) => {
+    props.setAssertiveness(newValue as number);
+  };
+
+  const handleBotName = (e : React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (e.target.value !== '') {
+      props.setBotName(e.target.value);
+    } 
+  };
 
   return (
     <div style={{ 
@@ -30,7 +45,7 @@ export function BotSettings() {
       <div style={{ margin: 20 }}>
         <p style={{ fontSize: 22, paddingBottom: 10}}>{'Custom Name'}</p>
 
-        <input style={{ backgroundColor: '#F9F8F7', borderRadius: 20, width: 306, height: 34, paddingLeft: 10, border: '1px solid #C4C4C4', outline: 0}}></input>
+        <input onChange={handleBotName} style={{ backgroundColor: '#F9F8F7', borderRadius: 20, width: 306, height: 34, paddingLeft: 10, border: '1px solid #C4C4C4', outline: 0}}></input>
       </div>
 
       <div style={{margin: 20}}>
@@ -41,6 +56,7 @@ export function BotSettings() {
         <Slider
             aria-label="Assertiveness"
             defaultValue={2}
+            onChange={handleAssertChange}
             step={null}
             marks={marks}
             min={1}
