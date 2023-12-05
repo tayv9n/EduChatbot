@@ -33,11 +33,21 @@ function generateGUID() {
 // Socket.io logic
 io.on('connection', (socket) => {
     // Lobby creation
-    socket.on('createLobby', async () => {
+    socket.on('createLobby', async (username) => {
         const guid = generateGUID();
-        lobbies[guid] = { users: {}, threadCreated: false };
+        lobbies[guid] = {
+            chatroomName: "",
+            hostUserame: username,
+            users: { [username]: socket.id }, // dictionary of users
+            chatStartedTime: -1, // unix time used to get running time by subtracting current time minus this
+            botSettings: {
+                assertiveness: -1,
+                botName: "",
+                topicName: "",
+            },
+        };
         socket.emit('lobbyCreated', guid);
-        console.log(` > CREATING LOBBY: ${guid}`);
+        console.log(` > CREATING LOBBY: ${guid}, host: ${username}`);
     });
 
     // Joining a lobby
@@ -62,6 +72,52 @@ io.on('connection', (socket) => {
     socket.on('lobbyMessage', async (guid, messageData) => {
         if (lobbies[guid]) {
             socket.to(guid).emit('message', messageData);
+
+            let respond = lobbies[guid].chatbot.botMessageListener(messageData.sender, messageData.text);
+            if (respond) {
+                io.to(guid).emit('message', { sender: lobbies[guid].chatbot, text: respond });
+            }
+        }
+    });
+
+    // pass in a lobbyID, and get back the host name of the lobby
+    socket.on('getHostName', async (guid) => {
+        if (lobbies[guid]) {
+            const hostName = lobbies[guid].hostUsername;
+            // Sending back an object with the host name
+            socket.emit('hostNameResponse', { hostName });
+        } else {
+            // Handle the case where the lobby doesn't exist
+            socket.emit('hostNameResponse', { error: 'Lobby not found' });
+        }
+    });
+
+    socket.on('updateBotSettings', async (guid, lobbyData) => {
+        if (lobbies[guid]) {
+            if (!lobbies[guid].botInitialized) {
+                lobbies[guid].botInitialized = true;
+
+                lobbies[guid].chatbot = new ChatBot(lobbies[guid].users, lobbyData.topic, lobbyData.botname, lobbyData.assertiveness);
+                let success = await bot.initializePrompting();
+                // TODO : ERROR HANDLING
+                let botPrompt = await bot.getInitialQuestion();
+
+                socket.to(guid).emit('message', { text: botPrompt, sender: lobbies[guid].chatbot.botname });
+            }
+        }
+    });
+
+    // returns a list of users in the lobby
+    socket.on('getUserListOfLobby', async (guid) => {
+        if (lobbies[guid] && lobbies[guid].users) {
+            // Get all usernames from the 'users' object
+            const userList = Object.keys(lobbies[guid].users);
+
+            // Send back the list of usernames
+            socket.emit('userListOfLobbyResponse', { userList });
+        } else {
+            // Handle the case where the lobby doesn't exist or has no users
+            socket.emit('userListOfLobbyResponse', { error: 'Lobby not found or no users in lobby' });
         }
     });
 
