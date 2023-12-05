@@ -1,5 +1,9 @@
 import './JoinLobby.css';
 import React, { useState } from 'react';
+import io from 'socket.io-client';
+
+const SERVER_URL = 'http://localhost:4000';
+const socket = io(SERVER_URL);
 
 interface LobbbyInformationProps {
   users : string[];
@@ -10,6 +14,7 @@ export function JoinLobby() {
   const [code, setCode] = useState('');
   const [disabled, setDisabled] = useState(false);
   const [lobbyState, setLobbyState] = useState('Not Joined');
+  const [userList, setUserList] = useState<string[]>([]);
 
   // Initialize the state with x boxes when the component is mounted
   React.useEffect(() => {
@@ -25,22 +30,54 @@ export function JoinLobby() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     setLobbyState('Waiting');
+  
+    // Emit a Socket.IO event to join the lobby
+    socket.emit('joinLobby', code, name);
+  
+    // Listen for the server's response
+    socket.on('joinedLobby', (guid) => {
+      // Emit a Socket.IO event to get list of users
+      socket.emit('getUserListOfLobby', guid)
 
-    // call api to JOIN LOBBY, RETURN CALL WILL INCLUDE LOBBY INFO AND LIST OF USERS INCLUDING THIS ONE
-
-    // CHECK IF LOBBY EXISTS
-    if (code === 'asdf') {
       setLobbyState('Joined');
       setDisabled(true);
-      // SET LOBBY INFORMATION
-    } else {
+    });
+  
+    socket.on('lobbyError', (error) => {
+      console.error('Error joining lobby:', error);
       setLobbyState('Error');
-    }
-
-    //TODO: ADD STATEMENT IF LOBBY CODE DOESNT EXIST AND IF API CALL RETURNS AN ERROR
+    });
   };
+
+  React.useEffect(() => {
+    const handleUserList = (userlist: string[]) => {
+      setUserList(userlist);
+  
+      // Turn off the event listener after it has been used once
+      socket.off('userList', handleUserList);
+    };
+  
+    const handleChatStarted = () => {
+      const encodedId = encodeURIComponent(code);
+      window.location.href = `chatroom?name=${name}&id=${encodedId}`;
+  
+      // Turn off the event listener after it has been used once
+      socket.off('chatStarted', handleChatStarted);
+    };
+  
+    // Set up event listeners
+    socket.on('userList', handleUserList);
+    socket.on('chatStarted', handleChatStarted);
+  
+    // Clean up event listeners when the component unmounts
+    return () => {
+      // Turn off event listeners
+      socket.off('userList', handleUserList);
+      socket.off('chatStarted', handleChatStarted);
+    };
+  }, [code, name]);
 
   return (
     //three main sections: screen, content box, members box
@@ -75,7 +112,7 @@ export function JoinLobby() {
       </div>
 
       {(lobbyState === 'Waiting') && <p className="waiting-paragraph">Attempting to join lobby...</p>}
-      {(lobbyState === 'Joined') && <LobbyInformation users={['Tariq', 'Kai', name]}/>}
+      {(lobbyState === 'Joined') && <LobbyInformation users={userList}/>}
       {(lobbyState === 'Error') && <p className="waiting-paragraph">Error joining room. Please try again.</p>}
       
     </div>
