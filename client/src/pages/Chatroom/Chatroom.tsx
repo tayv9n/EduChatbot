@@ -1,26 +1,46 @@
 import React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import './Chatroom.css'
+import io from 'socket.io-client';
+
+const SERVER_URL = 'http://localhost:4000';
+const socket = io(SERVER_URL);
 
 export function Chatroom() {
+  const [code, setCode] = useState('');
+
+  useEffect(() => {
+    // Retrieve the name parameter from the URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const idFromURL = searchParams.get('id') || '....';
+
+    // Set the name
+    setCode(() => idFromURL);
+
+    //socket recieve topic and name of chat
+
+  }, [setCode]);
+
   return (
     <div style={{
       backgroundColor: 'white'
     }}>
       <div className='page-header'>
         <p>{'Menu'}</p>
-        <p>{'Chatroom: LPRB'}</p>
+        <p>{'Chatroom: ' + code}</p>
       </div>
       <div style={{display: 'flex'}}>
         <div className='side-bar'><SideBar /></div>
         <div className='body-container'>
           <ChatHeader chatname='IN4MATX 117 Discussion' topic='Software Design'/>
-          <ChatBox />
+          <ChatBox code={code}/>
         </div>
       </div>
     </div>
   );
 }
+
+
 
 function SideBar() {
   const [isPopupVisible, setPopupVisible] = useState(false);
@@ -86,10 +106,21 @@ function ChatHeader(props : ChatHeaderProps) {
 }
 
 interface MessageProps {
-  message : string
+  user : string;
+  message : string;
 }
 
-function ChatBox() {
+interface MessageDataProps {
+  text: string;
+  sender: string;
+  lobbyId: string;
+};
+
+interface ChatBoxProps {
+  code: string;
+}
+
+function ChatBox(props : ChatBoxProps) {
 
   const [messages, setMessages] = useState<JSX.Element[]>([]);
   const [name, setName] = useState('Guest');
@@ -107,6 +138,18 @@ function ChatBox() {
     setName(() => formattedName);
 
   }, [setName]);
+
+  useEffect(() => {
+    // Set up event listener for incoming messages
+    socket.on('message', (messageData : MessageDataProps) => {
+        setMessages([...messages, <Message user={messageData.sender} message={messageData.text}/>]);
+    });
+
+    // Clean up on unmount
+    return () => {
+        socket.off('message');
+    };
+}, [socket]);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -138,7 +181,7 @@ function ChatBox() {
           />
         </div>
           <div>
-            <p className='message-user'>{name}</p>
+            <p className='message-user'>{props.user}</p>
             <p className='message-text'>{props.message}</p>
           </div>
 
@@ -156,8 +199,17 @@ function ChatBox() {
       if (input === '') {
         return; 
       }
-      setMessages([...messages, <Message message={input}/>]);
-      setInput('')
+
+      let messageData = {
+        text: input,
+        sender: name,
+        lobbyId: props.code
+      };
+
+      socket.emit('lobbyMessage', props.code, messageData);
+
+      setMessages([...messages, <Message user={name} message={input}/>]);
+      setInput('');
     };
   
     return (

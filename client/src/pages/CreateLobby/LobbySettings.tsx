@@ -2,7 +2,24 @@ import React from 'react';
 
 import './CreateLobby.css';
 
-export function LobbySettings() {
+type StateSetter<T> = React.Dispatch<React.SetStateAction<T>>;
+interface LobbySettingsProps {
+  setChatTime: StateSetter<number>
+  userCount: number
+}
+
+export function LobbySettings(props : LobbySettingsProps) {
+
+  const handleChange = (e : React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const newValue = parseFloat(e.target.value);
+    if (!isNaN(newValue)) {
+      if (newValue <= 20) {
+        props.setChatTime(newValue);
+      } else {props.setChatTime(10);}
+    } else {props.setChatTime(10);}
+  };
+
   return (
     <div style={{ 
       backgroundColor: '#F9F8F7',
@@ -34,12 +51,13 @@ export function LobbySettings() {
       <div style={{ margin: 20 }}>
         <p style={{ fontSize: 22, paddingBottom: 10}}>Chat Timer</p>
         <div style={{ display: 'flex', alignItems: 'center'}}>
-          <input style={{ backgroundColor: '#ECE7E0', borderRadius: 20, width: 97, height: 34, outline: 0, textAlign: 'center' }} placeholder="0"></input>
-          <p style={{marginLeft: 10, marginRight: 20 }}>hours</p>
-
-          <input style={{ backgroundColor: '#ECE7E0', borderRadius: 20, width: 97, height: 34, outline: 0, textAlign: 'center' }} placeholder="30"></input>
+        <input onChange={handleChange} style={{ backgroundColor: '#ECE7E0', borderRadius: 20, width: 97, height: 34, outline: 0, textAlign: 'center' }} placeholder="10"></input>
           <p style={{marginLeft: 10, marginRight: 20 }}>minutes</p>
         </div>
+      </div>
+
+      <div style={{ margin: 20 }}>
+        <p style={{ fontSize: 22, paddingBottom: 10}}>Number of Participants: {props.userCount}</p>
       </div>
     </div>
   );
