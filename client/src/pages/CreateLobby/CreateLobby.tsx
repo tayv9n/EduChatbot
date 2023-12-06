@@ -33,8 +33,6 @@ export function CreateLobby(props: CreateLobbyProps) {
 
     const formattedName = nameFromURL.replace(/\b\w/g, match => match.toUpperCase());
 
-    alert(`formatted name: ${formattedName}`)
-
     // Set the name
     setName(formattedName);
   }, [setName]);

@@ -47,11 +47,22 @@ io.on('connection', (socket) => {
         //     //topicName: "",
         //     //},
         // };
-        lobbies[guid] = { users: {}, threadCreated: false };
+        
+        console.log("Guid: ", guid);
+        console.log(io.sockets.adapter.rooms);
+        socket.join(guid);
+        console.log(io.sockets.adapter.rooms);
+
+        const roomExists = io.sockets.adapter.rooms.has(guid);
+        console.log(roomExists);
+
+        lobbies[guid] = { users: {}, roomStarted: false, botInitialized: false, hostUserame: username };
+        //socket.join(guid);
+        lobbies[guid].users[username] = 0;
         socket.emit('lobbyCreated', guid);
-        console.log(` > CREATING LOBBY: ${guid}, host: ${username}`);
-        console.log(lobbies);
-        console.log(` > LOBBY CREATED`);
+        //console.log(` > CREATING LOBBY: ${guid}, host: ${username}`);
+        //console.log(lobbies);
+        //console.log(` > LOBBY CREATED`);
     });
 
     socket.on('testBroadcast', () => {
@@ -66,13 +77,26 @@ io.on('connection', (socket) => {
         // console.log(lobbies);
         if (lobbies[guid] && !lobbies[guid].users[username]) {
             socket.join(guid);
-            lobbies[guid].users[username] = socket.id;
+            lobbies[guid].users[username] = 0;
             socket.emit('joinedLobby', guid);
             io.to(guid).emit('userJoinedLobby', username);
         } else {
             socket.emit('lobbyError', 'Error joining lobby');
         }
     });
+
+    socket.on('joinRoom', async (guid, username) => {
+        console.log(` > Joining Chatroom: ${guid} by user: ${username}`);
+
+        if (lobbies[guid] && lobbies[guid].users[username] == 0) {
+            socket.join(guid);
+            socket.emit('joinedChatroom', guid);
+        } else {
+            socket.emit('chatroomError', 'Error joining room.');
+        }
+
+        console.log(lobbies[guid].users);
+    })
 
     // Sending messages within a lobby
     // this is the primary change to make lobbies work, we use
@@ -83,8 +107,8 @@ io.on('connection', (socket) => {
         const testMessage = "This is a test message to all users.";
 
         // =================================== THIS IS A BAND AID FIX ===================================
-        io.emit('message', messageData);
-        console.log(` > BROADCASTING TEST MESSAGE TO ALL USERS`);
+        //io.emit('message', messageData);
+        //console.log(` > BROADCASTING TEST MESSAGE TO ALL USERS`);
         // =================================== THIS IS A BAND AID FIX ===================================
 
 
@@ -118,24 +142,26 @@ io.on('connection', (socket) => {
     socket.on('updateBotSettings', async (guid, lobbyData) => {
         if (lobbies[guid]) {
             socket.to(guid).emit('chatStarted');
+            lobbies[guid].roomStarted = true;
 
             if (!lobbies[guid].botInitialized) {
                 console.log(` > LOBBY STARTED, CODE: ${guid}`);
                 console.log(lobbies[guid]);
-                // console.log(lobbyData);
-                let chatbotInstance = new ChatBot(lobbies[guid].users, lobbyData.topic, lobbyData.botname, lobbyData.assertiveness);
-                // console.log(lobbies[guid]);
-                // let success = await chatbotInstance.initializePrompting();
-                // console.log(lobbies[guid]);
+                console.log(lobbyData);
+                //let chatbotInstance = new ChatBot(lobbies[guid].users, lobbyData.topic, lobbyData.botname, lobbyData.assertiveness);
+                console.log(lobbies[guid]);
+                //let success = await chatbotInstance.initializePrompting();
+                console.log(lobbies[guid]);
                 // TODO : ERROR HANDLING
-                // console.log(success);
-                let botPrompt = await chatbotInstance.getInitialQuestion();
-                // console.log(botPrompt);
-                io.to(guid).emit('message', { text: botPrompt, sender: chatbotInstance.botname });
+                //console.log(success);
+                //let botPrompt = await chatbotInstance.getInitialQuestion();
+                //console.log(botPrompt);
+                //io.to(guid).emit('message', { text: botPrompt, sender: chatbotInstance.botname });
                 //lobbies[guid].botInitialized = true;
                 // console.log(lobbies[guid]);
                 //lobbies[guid].chatbot = chatbotInstance;
                 console.log(` > LOBBY STARTED!`);
+                //lobbies[guid].roomStarted = true;
             }
         }
     });

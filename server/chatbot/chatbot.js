@@ -2,7 +2,7 @@ const { OpenAI } = require("openai");
 const fs = require('fs');
 
 const openai = new OpenAI({
-    apiKey: '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'
+    apiKey: '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'
 });
 
 class ChatBot {

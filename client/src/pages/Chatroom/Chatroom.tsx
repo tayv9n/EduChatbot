@@ -132,8 +132,8 @@ function ChatBox(props: ChatBoxProps) {
 
   useEffect(() => {
     // Emit joinRoom when the component mounts or roomId/socket changes
-    if (props.socket && props.code) {
-      props.socket.emit('joinRoom', props.code);
+    if (props.socket && props.code && name !== '') {
+      props.socket.emit('joinRoom', props.code, name);
     }
 
     // Optionally, handle leaving the room when the component unmounts
@@ -142,7 +142,7 @@ function ChatBox(props: ChatBoxProps) {
         props.socket.emit('leaveRoom', props.code);
       }
     };
-  }, [props.socket, props.code]);
+  }, [props.socket, props.code, name]);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -169,8 +169,6 @@ function ChatBox(props: ChatBoxProps) {
 
   useEffect(() => {
     props.socket.on('message', (messageData: MessageDataProps) => {
-
-      console.log('messsafinggg');
       setMessages(prevMessages => [...prevMessages, <Message user={messageData.sender} message={messageData.text} />]);
     });
 
