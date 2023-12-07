@@ -17,10 +17,6 @@ const io = socketIo(server, {
     }
 });
 
-const openai = new OpenAI({
-    apiKey: ''
-});
-
 // Lobby management
 const lobbies = {};
 
@@ -56,7 +52,7 @@ io.on('connection', (socket) => {
         const roomExists = io.sockets.adapter.rooms.has(guid);
         console.log(roomExists);
 
-        lobbies[guid] = { users: {}, roomStarted: false, botInitialized: false, hostUserame: username };
+        lobbies[guid] = { users: {}, roomStarted: false, botInitialized: false, hostUserame: username, chatbot: null };
         //socket.join(guid);
         lobbies[guid].users[username] = 0;
         socket.emit('lobbyCreated', guid);
@@ -94,8 +90,6 @@ io.on('connection', (socket) => {
         } else {
             socket.emit('chatroomError', 'Error joining room.');
         }
-
-        console.log(lobbies[guid].users);
     })
 
     // Sending messages within a lobby
@@ -104,26 +98,17 @@ io.on('connection', (socket) => {
     // be sure to do the same with the chatbot messages so they
     // end up in the correct room.
     socket.on('lobbyMessage', async (guid, messageData) => {
-        const testMessage = "This is a test message to all users.";
-
-        // =================================== THIS IS A BAND AID FIX ===================================
-        //io.emit('message', messageData);
-        //console.log(` > BROADCASTING TEST MESSAGE TO ALL USERS`);
-        // =================================== THIS IS A BAND AID FIX ===================================
-
 
         // console.log(lobbies);
-        console.log(`LOBBIES: ${lobbies}`);
-        console.log(`MSG: ${messageData.text} FROM USER: ${messageData.sender} ROOM IS: ${messageData.lobbyId}`)
-        console.log(`LOBBY IN QUESTION:`);
-        console.log(lobbies[guid]);
         if (lobbies[guid]) {
             io.to(guid).emit('message', messageData);
             console.log(` > BROADCASTING: ${messageData.text} FROM: ${messageData.sender}; TO: ${lobbies[guid].users[lobbies[guid].hostUserame]}`);
-            //let respond = lobbies[guid].chatbot.botMessageListener(messageData.sender, messageData.text);
-            //if (respond) {
-            //io.to(guid).emit('message', { sender: lobbies[guid].chatbot, text: respond });
-            //}
+
+            let respond = await lobbies[guid].chatbot.botMessageListener(messageData.sender, messageData.text);
+
+            if (respond) {
+                io.to(guid).emit('message', { sender: lobbies[guid].chatbot.botname, text: respond });
+            }
         }
     });
 
@@ -146,22 +131,18 @@ io.on('connection', (socket) => {
 
             if (!lobbies[guid].botInitialized) {
                 console.log(` > LOBBY STARTED, CODE: ${guid}`);
-                console.log(lobbies[guid]);
-                console.log(lobbyData);
-                //let chatbotInstance = new ChatBot(lobbies[guid].users, lobbyData.topic, lobbyData.botname, lobbyData.assertiveness);
-                console.log(lobbies[guid]);
-                //let success = await chatbotInstance.initializePrompting();
-                console.log(lobbies[guid]);
+
+                let chatbotInstance = new ChatBot(Object.keys(lobbies[guid].users), lobbyData.topic, lobbyData.botname, lobbyData.assertiveness);
+                let success = await chatbotInstance.initializePrompting();
                 // TODO : ERROR HANDLING
                 //console.log(success);
-                //let botPrompt = await chatbotInstance.getInitialQuestion();
+                let botPrompt = await chatbotInstance.getInitialQuestion();
                 //console.log(botPrompt);
-                //io.to(guid).emit('message', { text: botPrompt, sender: chatbotInstance.botname });
-                //lobbies[guid].botInitialized = true;
+                io.to(guid).emit('message', { text: botPrompt, sender: chatbotInstance.botname });
+                lobbies[guid].botInitialized = true;
                 // console.log(lobbies[guid]);
-                //lobbies[guid].chatbot = chatbotInstance;
+                lobbies[guid].chatbot = chatbotInstance;
                 console.log(` > LOBBY STARTED!`);
-                //lobbies[guid].roomStarted = true;
             }
         }
     });

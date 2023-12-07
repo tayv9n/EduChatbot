@@ -1,13 +1,16 @@
 const { OpenAI } = require("openai");
 const fs = require('fs');
+require('dotenv').config();
 
 const openai = new OpenAI({
-    apiKey: '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'
+    apiKey: process.env.OPENAI_API_KEY
 });
 
 class ChatBot {
     constructor(users, topic, botname='ChatZot', assertiveness=2) {
         this.users = users
+        console.log(this.users);
+        console.log(typeof(this.users));
         this.topic = topic
         this.initialQuestion = '';
         this.botname = botname;
@@ -21,14 +24,14 @@ class ChatBot {
 
         this.behaviorPrompt = readFileContent("chatbot/behavior_prompt.txt");
         this.chimePrompt = readFileContent("chatbot/chime_prompt.txt");
+        this.participationPrompt = readFileContent("chatbot/participation_prompt.txt");
 
         this.behaviorPrompt = this.behaviorPrompt.replace("{{users}}", users.toString());
         this.behaviorPrompt = this.behaviorPrompt.replace("{{topic}}", topic);
-        this.chimePrompt = this.chimePrompt.replace("{{botname}}", botname); // NEED TO ADD BOT NAME
+        this.chimePrompt = this.chimePrompt.replace("{{botname}}", botname);
 
-        this.behaviorMessages = [];
+        this.behaviorMessages = [{role: "system", content: this.behaviorPrompt}];
         this.chimeMessages = [{role: "system", content: this.chimePrompt}];
-        this.behaviorMessages.push({role: "system", content: this.behaviorPrompt});
 
         console.log("Object constructed. Now initialize Prompts.")
         // return initial question
@@ -152,7 +155,8 @@ class ChatBot {
 
             case 1:
                 // Participation prompt. replace with students name
-                this.behaviorMessages.push({role: "system", content: "PARTICIPATION PROMPT"});
+                let participationPromptSpecific = this.participationPrompt.replace("{{user}}", user)
+                this.behaviorMessages.push({role: "system", content: participationPromptSpecific});
 
                 let completion1  = await openai.chat.completions.create({
                     messages: this.behaviorMessages,
@@ -178,21 +182,6 @@ class ChatBot {
 
     getInitialQuestion() {
         return this.initialQuestion;
-    }
-
-    async waitForRunCompletion(threadId, runId) {
-        let runStatus = null;
-    
-        do {
-            const run = await openai.beta.threads.runs.retrieve(threadId, runId);
-            runStatus = run.status;
-            if (runStatus !== 'completed') {
-                // Wait for some time before checking again
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for 2 seconds
-            }
-        } while (runStatus !== 'completed');
-    
-        return runStatus;
     }
 }
 
