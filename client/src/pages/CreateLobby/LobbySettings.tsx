@@ -5,6 +5,8 @@ import './CreateLobby.css';
 type StateSetter<T> = React.Dispatch<React.SetStateAction<T>>;
 interface LobbySettingsProps {
   setChatTime: StateSetter<number>
+  setChatName: StateSetter<string>
+  setTopic: StateSetter<string>
   userCount: number
 }
 
@@ -18,6 +20,16 @@ export function LobbySettings(props : LobbySettingsProps) {
         props.setChatTime(newValue);
       } else {props.setChatTime(10);}
     } else {props.setChatTime(10);}
+  };
+
+  const handleTopicChange = (e : React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    props.setTopic(e.target.value);
+  };
+
+  const handleChatNameChange = (e : React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    props.setChatName(e.target.value);
   };
 
   return (
@@ -38,13 +50,13 @@ export function LobbySettings(props : LobbySettingsProps) {
       <div style={{ margin: 20 }}>
         <p style={{ fontSize: 22, paddingBottom: 10}}>Chatroom Name</p>
 
-        <input style={{ backgroundColor: '#F9F8F7', borderRadius: 20, width: 670, height: 34, border: '1px solid #C4C4C4', outline: 0, paddingLeft: 10 }}></input>
+        <input onChange={handleChatNameChange} style={{ backgroundColor: '#F9F8F7', borderRadius: 20, width: 670, height: 34, border: '1px solid #C4C4C4', outline: 0, paddingLeft: 10 }}></input>
       </div>
 
       <div style={{ margin: 20 }}>
         <p style={{ fontSize: 22, paddingBottom: 10}}>Topic</p>
 
-        <input style={{ backgroundColor: '#F9F8F7', borderRadius: 20, width: 670, height: 34, border: '1px solid #C4C4C4', outline: 0, paddingLeft: 10 }}></input>
+        <input onChange={handleTopicChange} style={{ backgroundColor: '#F9F8F7', borderRadius: 20, width: 670, height: 34, border: '1px solid #C4C4C4', outline: 0, paddingLeft: 10 }}></input>
       </div>
 
 
@@ -59,22 +71,6 @@ export function LobbySettings(props : LobbySettingsProps) {
       <div style={{ margin: 20 }}>
         <p style={{ fontSize: 22, paddingBottom: 10}}>Number of Participants: {props.userCount}</p>
       </div>
-    </div>
-  );
-}
-
-interface MemberProps {
-  name: string;
-}
-
-function MemberNames(props: MemberProps) {
-  return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <div className={'circle'} />
-        <p style={{ fontSize: 20 }}>{props.name}</p>
-      </div>
-      <hr style={{ borderTop: '2px solid #D9D9D9', borderLeft: 'none' }} />
     </div>
   );
 }

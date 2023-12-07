@@ -1,25 +1,30 @@
-import React, { useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import './CreateLobby.css';
-import { Link } from 'react-router-dom';
 import { BotSettings } from './BotSettings';
 import { LobbySettings } from './LobbySettings';
-import io from 'socket.io-client';
+import { Socket } from 'socket.io-client';
+// import { Socket } from 'socket.io';
 
-const SERVER_URL = 'http://localhost:4000';
-const socket = io(SERVER_URL);
+interface CreateLobbyProps {
+  socket: Socket;
+}
 
-export function CreateLobby() {
-  const [name, setName] = useState('Guest');
+export function CreateLobby(props: CreateLobbyProps) {
+  const [name, setName] = useState('');
   const [lobbyId, setLobbyId] = useState('. . . .');
   const [chatTime, setChatTime] = useState(10);
+  const [botName, setBotName] = useState('ChatZot');
+  const [assertiveness, setAssertiveness] = useState(2);
+  const [topic, setTopic] = useState('');
+  const [chatName, setChatName] = useState('Discussion');
 
-  useEffect(() => {
-      socket.emit('createLobby');
-  }, []);
+  // useEffect(() => {
+  //   props.socket.emit('createLobby', name);
+  // }, []);
 
-  socket.on('lobbyCreated', (newLobbyId) => {
-    setLobbyId(newLobbyId);
-  });
+  // props.socket.on('lobbyCreated', (newLobbyId) => {
+  //   setLobbyId(newLobbyId);
+  // });
 
   useEffect(() => {
     // Retrieve the name parameter from the URL
@@ -29,25 +34,50 @@ export function CreateLobby() {
     const formattedName = nameFromURL.replace(/\b\w/g, match => match.toUpperCase());
 
     // Set the name
-    setName(() => formattedName);
+    setName(formattedName);
   }, [setName]);
+
+  useEffect(() => {
+    if (name) {
+      props.socket.emit('createLobby', name);
+    }
+  }, [name, props.socket]);
+
+  useEffect(() => {
+    const handleLobbyCreated = (newLobbyId: string) => {
+      setLobbyId(newLobbyId);
+    };
+
+    props.socket.on('lobbyCreated', handleLobbyCreated);
+
+    return () => {
+      props.socket.off('lobbyCreated', handleLobbyCreated);
+    };
+  }, [props.socket]);
 
   const handleChatroomStart = () => {
 
-
+    let lobbyData = {
+      botname: botName,
+      chatLength: chatTime,
+      assertiveness: assertiveness,
+      topic: topic,
+      chatName: chatName
+    }
     // send bot settings thru socket
-    
+    props.socket.emit('updateBotSettings', lobbyId, lobbyData);
+
     if (lobbyId !== '. . . .') {
       const encodedId = encodeURIComponent(lobbyId);
       window.location.href = `chatroom?name=${name}&id=${encodedId}`;
     }
   };
-  
+
 
   return (
     <div>
 
-      <div style={{ display: 'flex', justifyContent: 'center'}}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
         <h1 className="joinheader">CREATE CHATROOM</h1>
       </div>
 
@@ -68,8 +98,8 @@ export function CreateLobby() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', padding: 40 }}>
-        <BotSettings />
-        <LobbySettings setChatTime={setChatTime} userCount={5}/>
+        <BotSettings setBotName={setBotName} setAssertiveness={setAssertiveness} />
+        <LobbySettings setChatTime={setChatTime} setTopic={setTopic} setChatName={setChatName} userCount={5} />
       </div>
     </div>
   );
