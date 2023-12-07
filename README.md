@@ -21,7 +21,7 @@ Navigate to the server directory from the root of the project:
 
 Once the dependencies are installed, you can start the server with:
 
-    npm start
+    node index.js
 
 The server should now be running on http://localhost:4000 (or the port you specified in your .env file).
 
