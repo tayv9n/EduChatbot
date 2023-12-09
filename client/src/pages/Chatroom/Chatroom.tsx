@@ -4,6 +4,59 @@ import './Chatroom.css'
 import { Socket } from 'socket.io-client';
 // import { Socket } from 'socket.io';
 
+function Timer() {
+  const [seconds, setSeconds] = useState<number>(60 * 15);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setSeconds((prevSeconds) => prevSeconds - 1);
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const remainingSeconds = time % 60;
+    return (
+      <p style={{ margin: 0, marginTop: 10, fontSize: '20px', fontWeight: 'bold'}}>
+        <span style={{ backgroundColor: 'white', padding: '7px 14px', borderRadius: '4px', width: '20px', display: 'inline-block' }}>
+          {minutes}
+        </span>{' '}
+        m
+        {' '}<span style={{ backgroundColor: 'white', padding: '7px 14px', borderRadius: '4px', width: '20px', display: 'inline-block' }}>
+          {remainingSeconds}
+        </span>{' '}
+        s
+      </p>
+    );
+  };
+
+  return (
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column',
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      marginLeft: '25px',
+      marginRight: '25px',
+      border: '2px solid #D7DBDB', 
+      borderRadius: '8px', 
+      padding: '8px',
+      color: 'black',
+      backgroundColor: '#D7DBDB',
+    }}>
+      <p style={{ margin: 0, fontSize: '20px', color: '#527785', fontWeight: 'bold' }}>
+        Timer
+      </p>
+      <p style={{ margin: '8px 0'}}>
+        {formatTime(seconds)}
+      </p>
+    </div>
+  );
+}
+
+
 interface ChatroomProps {
   socket: Socket;
 }
@@ -84,6 +137,10 @@ function SideBar() {
             Export
           </button>
         </div>
+      </div>
+
+      <div style={{ marginTop: '20px' }}>
+        <Timer />
       </div>
 
       <a href="home" className='exit-position'>
