@@ -151,6 +151,19 @@ class ChatBot {
 
                 this.behaviorMessages.push({role: "assistant", content: completion.choices[0].message.content});
 
+                if (completion.choices[0].message.content.length > 200) {
+                    this.behaviorMessages.push({role: "system", content: "Please reiterate your last response, but shorten it to less than 150 characters."});
+
+                    completion  = await openai.chat.completions.create({
+                        messages: this.behaviorMessages,
+                        model: "gpt-3.5-turbo-1106"
+                    });
+
+                    this.behaviorMessages.push({role: "assistant", content: completion.choices[0].message.content});
+
+                    return completion.choices[0].message.content;
+                }
+
                 return completion.choices[0].message.content;
 
             case 1:

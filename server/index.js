@@ -31,18 +31,6 @@ io.on('connection', (socket) => {
     // Lobby creation
     socket.on('createLobby', async (username) => {
         const guid = generateGUID();
-        // lobbies[guid] = {
-        //     //chatroomName: "",
-        //     hostUserame: username,
-        //     users: { [username]: socket.id }, // dictionary of users
-        //     //chatStartedTime: -1, // unix time used to get running time by subtracting current time minus this
-        //     //chatbot: null,
-        //     //botSettings: {
-        //     //assertiveness: -1,
-        //     //botName: "",
-        //     //topicName: "",
-        //     //},
-        // };
         
         console.log("Guid: ", guid);
         console.log(io.sockets.adapter.rooms);
@@ -52,13 +40,10 @@ io.on('connection', (socket) => {
         const roomExists = io.sockets.adapter.rooms.has(guid);
         console.log(roomExists);
 
-        lobbies[guid] = { users: {}, roomStarted: false, botInitialized: false, hostUserame: username, chatbot: null };
-        //socket.join(guid);
+        lobbies[guid] = { users: {}, roomStarted: false, botInitialized: false, hostUserame: username, chatbot: null, chatData: null };
+
         lobbies[guid].users[username] = 0;
         socket.emit('lobbyCreated', guid);
-        //console.log(` > CREATING LOBBY: ${guid}, host: ${username}`);
-        //console.log(lobbies);
-        //console.log(` > LOBBY CREATED`);
     });
 
     socket.on('testBroadcast', () => {
@@ -128,6 +113,7 @@ io.on('connection', (socket) => {
         if (lobbies[guid]) {
             socket.to(guid).emit('chatStarted');
             lobbies[guid].roomStarted = true;
+            lobbies[guid].chatData = {time: lobbyData.chatLength, chatName: lobbyData.chatName, chatTopic: lobbyData.topic};
 
             if (!lobbies[guid].botInitialized) {
                 console.log(` > LOBBY STARTED, CODE: ${guid}`);
@@ -135,12 +121,12 @@ io.on('connection', (socket) => {
                 let chatbotInstance = new ChatBot(Object.keys(lobbies[guid].users), lobbyData.topic, lobbyData.botname, lobbyData.assertiveness);
                 let success = await chatbotInstance.initializePrompting();
                 // TODO : ERROR HANDLING
-                //console.log(success);
+
                 let botPrompt = await chatbotInstance.getInitialQuestion();
-                //console.log(botPrompt);
+
                 io.to(guid).emit('message', { text: botPrompt, sender: chatbotInstance.botname });
                 lobbies[guid].botInitialized = true;
-                // console.log(lobbies[guid]);
+
                 lobbies[guid].chatbot = chatbotInstance;
                 console.log(` > LOBBY STARTED!`);
             }
@@ -157,9 +143,16 @@ io.on('connection', (socket) => {
             socket.emit('userListOfLobbyResponse', { userList });
         } else {
             // Handle the case where the lobby doesn't exist or has no users
-            socket.emit('userListOfLobbyResponse', { error: 'Lobby not found or no users in lobby' });
+            socket.emit('userListOfLobbyResponseError');
         }
     });
+
+    // returns chat data: time, topic, chatroom name
+    socket.on('getChatData', async (guid) => {
+        if (lobbies[guid]) {
+            io.to(guid).emit('chatData', lobbies[guid].chatData);
+        }
+    })
 
     // Leaving a lobby
     socket.on('leaveLobby', (guid, username) => {
