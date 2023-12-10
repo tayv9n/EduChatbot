@@ -75,7 +75,7 @@ io.on('connection', (socket) => {
         } else {
             socket.emit('chatroomError', 'Error joining room.');
         }
-    })
+    });
 
     // Sending messages within a lobby
     // this is the primary change to make lobbies work, we use
@@ -152,11 +152,21 @@ io.on('connection', (socket) => {
         if (lobbies[guid]) {
             io.to(guid).emit('chatData', lobbies[guid].chatData);
         }
-    })
+    });
+
+    // starts chat conclusion, prompts chatbot
+    socket.on('chatStartConclusionPhase', async (guid, timeLeft) => {
+        if (lobbies[guid] && lobbies[guid].botInitialized) {
+            let chatbotInstance = lobbies[guid].chatbot;
+            let conclusionMessage = await chatbotInstance.startConclusion(timeLeft);
+
+            io.to(guid).emit('message', { text: conclusionMessage, sender: chatbotInstance.botname });
+        }
+    });
 
     // Leaving a lobby
     socket.on('leaveLobby', (guid, username) => {
-        if (lobbies[guid] && lobbies[guid].users[username]) {
+        if (lobbies[guid] && (username in lobbies[guid].users)) {
             socket.leave(guid);
             delete lobbies[guid].users[username];
             if (Object.keys(lobbies[guid].users).length === 0) {

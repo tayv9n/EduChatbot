@@ -17,11 +17,19 @@ export function Chatroom(props: ChatroomProps) {
   const [chatName, setChatName] = useState('');
   const [chatTime, setChatTime] = useState(1);
   const [chatTopic, setChatTopic] = useState('');
+  const [name, setName] = useState('Guest');
 
   useEffect(() => {
     // Retrieve the name parameter from the URL
     const searchParams = new URLSearchParams(window.location.search);
     const idFromURL = searchParams.get('id') || '....';
+    const nameFromURL = searchParams.get('name');
+
+    if (nameFromURL !== null) {
+      const decodedName = decodeURIComponent(nameFromURL);
+      // Now decodedName is guaranteed to be a string
+      setName(decodedName);
+    };
 
     // Set the name
     setCode(() => idFromURL);
@@ -40,7 +48,7 @@ export function Chatroom(props: ChatroomProps) {
 
   useEffect(() => {
     props.socket.on('chatData', (chatItems : ChatroomItems) => {
-      console.log("getting info");
+
       setChatName(chatItems.chatName);
       setChatTime(chatItems.time);
       setChatTopic(chatItems.chatTopic);
@@ -57,7 +65,7 @@ export function Chatroom(props: ChatroomProps) {
         <p>{'Chatroom: ' + code}</p>
       </div>
       <div style={{ display: 'flex' }}>
-        <div className='side-bar'><SideBar time={chatTime}/></div>
+        <div className='side-bar'><SideBar time={chatTime} socket={props.socket} code={code} name={name}/></div>
         <div className='body-container'>
           <ChatHeader chatname={chatName} topic={chatTopic} />
           <ChatBox socket={props.socket} code={code} />
@@ -69,6 +77,9 @@ export function Chatroom(props: ChatroomProps) {
 
 interface SideBarProps {
   time: number;
+  socket: Socket;
+  code: String;
+  name : String;
 }
 
 function SideBar(props : SideBarProps) {
@@ -86,6 +97,14 @@ function SideBar(props : SideBarProps) {
   const handleExport = () => {
     // Add logic for export button
     console.log('Exported!');
+  };
+
+  const handleChatroomLeave = () => {
+    if (props.socket && props.code) {
+      props.socket.emit('leaveLobby', props.code, props.name);
+    }
+    
+    window.location.href = 'home';
   };
 
   return (
@@ -119,12 +138,12 @@ function SideBar(props : SideBarProps) {
       </div>
 
       <div style={{ marginTop: '20px' }}>
-        <Timer time={time}/>
+        <Timer time={time} socket={props.socket} code={props.code}/>
       </div>
 
-      <a href="home" className='exit-position'>
-        <button className='exit-button'>Quit Chatroom</button>
-      </a>
+      <div className='exit-position'>
+        <button className='exit-button' onClick={handleChatroomLeave}>Quit Chatroom</button>
+      </div>
     </div>
   )
 }
@@ -172,12 +191,6 @@ function ChatBox(props: ChatBoxProps) {
       props.socket.emit('joinRoom', props.code, name);
     }
 
-    // Optionally, handle leaving the room when the component unmounts
-    return () => {
-      if (props.socket && props.code) {
-        props.socket.emit('leaveRoom', props.code);
-      }
-    };
   }, [props.socket, props.code, name]);
 
   useEffect(() => {
@@ -317,10 +330,12 @@ function ChatBox(props: ChatBoxProps) {
 
 interface TimerProps {
   time : number;
+  socket : Socket;
+  code : String;
 }
 
 function Timer(props : TimerProps) {
-  const [seconds, setSeconds] = useState<number>(60 * 1);
+  const [seconds, setSeconds] = useState<number>(60 * 0);
 
   useEffect(() => {
     setSeconds(60 * props.time);
@@ -333,6 +348,12 @@ function Timer(props : TimerProps) {
 
     return () => clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    if (seconds === 60) {
+      props.socket.emit('chatStartConclusionPhase', props.code, 1);
+    }
+  })
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
