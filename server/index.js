@@ -67,7 +67,7 @@ io.on('connection', (socket) => {
         const roomExists = io.sockets.adapter.rooms.has(guid);
         console.log(roomExists);
 
-        lobbies[guid] = { users: {}, roomStarted: false, botInitialized: false, hostUserame: username, chatbot: null, chatData: null };
+        lobbies[guid] = { users: {}, roomStarted: false, botInitialized: false, hostUserame: username, chatbot: null, chatData: null, conclusionStarted: false };
 
         lobbies[guid].users[username] = 0;
         socket.emit('lobbyCreated', guid);
@@ -206,7 +206,8 @@ io.on('connection', (socket) => {
 
     // starts chat conclusion, prompts chatbot
     socket.on('chatStartConclusionPhase', async (guid, timeLeft) => {
-        if (lobbies[guid] && lobbies[guid].botInitialized) {
+        if (lobbies[guid] && lobbies[guid].botInitialized && !lobbies[guid].conclusionStarted) {
+            lobbies[guid].conclusionStarted = true;
             let chatbotInstance = lobbies[guid].chatbot;
             let conclusionMessage = await chatbotInstance.startConclusion(timeLeft);
 

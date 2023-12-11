@@ -21,6 +21,7 @@ export function Chatroom(props: ChatroomProps) {
   const [chatTopic, setChatTopic] = useState('');
   const [name, setName] = useState('Guest');
   const [masterMessages, setMasterMessages] = useState<JSX.Element[]>([]);
+  const [disabled, setDisabled] = useState(false);
 
   useEffect(() => {
     // Retrieve the name parameter from the URL
@@ -68,10 +69,17 @@ export function Chatroom(props: ChatroomProps) {
         <p>{'Chatroom: ' + code}</p>
       </div>
       <div style={{ display: 'flex' }}>
-        <div className='side-bar'><SideBar time={chatTime} socket={props.socket} code={code} name={name} messages={masterMessages}/></div>
+        <div className='side-bar'>
+          <SideBar 
+            time={chatTime} 
+            socket={props.socket} 
+            code={code} name={name} 
+            messages={masterMessages} 
+            setDisabled={setDisabled}/>
+        </div>
         <div className='body-container'>
           <ChatHeader chatname={chatName} topic={chatTopic} />
-          <ChatBox socket={props.socket} code={code} setMasterMessages={setMasterMessages}/>
+          <ChatBox socket={props.socket} code={code} setMasterMessages={setMasterMessages} disabled={disabled}/>
         </div>
       </div>
     </div>
@@ -84,6 +92,7 @@ interface SideBarProps {
   code: String;
   name : String;
   messages : JSX.Element[];
+  setDisabled : StateSetter<boolean>;
 }
 
 function SideBar(props : SideBarProps) {
@@ -155,7 +164,11 @@ function SideBar(props : SideBarProps) {
       </div>
 
       <div style={{ marginTop: '20px' }}>
-        <Timer time={time} socket={props.socket} code={props.code}/>
+        <Timer 
+          time={time} 
+          socket={props.socket} 
+          code={props.code} 
+          setDisabled={props.setDisabled}/>
       </div>
 
       <div className='exit-position'>
@@ -196,6 +209,7 @@ interface ChatBoxProps {
   code: string;
   socket: Socket;
   setMasterMessages : StateSetter<JSX.Element[]>
+  disabled : boolean;
 }
 
 function ChatBox(props: ChatBoxProps) {
@@ -320,6 +334,7 @@ function ChatBox(props: ChatBoxProps) {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Message"
             className='message-input'
+            disabled={props.disabled}
           />
           <button type="submit" className='message-button'>
             <img
@@ -369,10 +384,11 @@ interface TimerProps {
   time : number;
   socket : Socket;
   code : String;
+  setDisabled : StateSetter<boolean>;
 }
 
 function Timer(props : TimerProps) {
-  const [seconds, setSeconds] = useState<number>(60 * 0);
+  const [seconds, setSeconds] = useState<number>(60 * -1);
 
   useEffect(() => {
     setSeconds(60 * props.time);
@@ -398,7 +414,11 @@ useEffect(() => {
     if (seconds === 60) {
       props.socket.emit('chatStartConclusionPhase', props.code, 1);
     }
-  })
+  });
+
+  useEffect(() => {
+    if (seconds === 0) {props.setDisabled(true)};
+  });
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
