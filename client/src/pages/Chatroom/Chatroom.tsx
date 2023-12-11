@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import './Chatroom.css'
 import { Socket } from 'socket.io-client';
 
+type StateSetter<T> = React.Dispatch<React.SetStateAction<T>>;
 interface ChatroomItems {
   time: number;
   chatName: string;
@@ -18,6 +19,7 @@ export function Chatroom(props: ChatroomProps) {
   const [chatTime, setChatTime] = useState(1);
   const [chatTopic, setChatTopic] = useState('');
   const [name, setName] = useState('Guest');
+  const [masterMessages, setMasterMessages] = useState<JSX.Element[]>([]);
 
   useEffect(() => {
     // Retrieve the name parameter from the URL
@@ -65,10 +67,10 @@ export function Chatroom(props: ChatroomProps) {
         <p>{'Chatroom: ' + code}</p>
       </div>
       <div style={{ display: 'flex' }}>
-        <div className='side-bar'><SideBar time={chatTime} socket={props.socket} code={code} name={name}/></div>
+        <div className='side-bar'><SideBar time={chatTime} socket={props.socket} code={code} name={name} messages={masterMessages}/></div>
         <div className='body-container'>
           <ChatHeader chatname={chatName} topic={chatTopic} />
-          <ChatBox socket={props.socket} code={code} />
+          <ChatBox socket={props.socket} code={code} setMasterMessages={setMasterMessages}/>
         </div>
       </div>
     </div>
@@ -80,6 +82,7 @@ interface SideBarProps {
   socket: Socket;
   code: String;
   name : String;
+  messages : JSX.Element[];
 }
 
 function SideBar(props : SideBarProps) {
@@ -95,7 +98,7 @@ function SideBar(props : SideBarProps) {
   };
 
   const handleExport = () => {
-    // Add logic for export button
+    //props.messages
     console.log('Exported!');
   };
 
@@ -178,6 +181,7 @@ interface MessageDataProps {
 interface ChatBoxProps {
   code: string;
   socket: Socket;
+  setMasterMessages : StateSetter<JSX.Element[]>
 }
 
 function ChatBox(props: ChatBoxProps) {
@@ -221,6 +225,7 @@ function ChatBox(props: ChatBoxProps) {
   useEffect(() => {
     props.socket.on('message', (messageData: MessageDataProps) => {
       setMessages(prevMessages => [...prevMessages, <Message user={messageData.sender} message={messageData.text} timestamp={messageData.timestamp}/>]);
+      props.setMasterMessages(prevMessages => [...prevMessages, <Message user={messageData.sender} message={messageData.text} timestamp={messageData.timestamp}/>]);
     });
 
     return () => {

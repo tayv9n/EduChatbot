@@ -103,8 +103,8 @@ io.on('connection', (socket) => {
         // console.log(lobbies);
         if (lobbies[guid]) {
             io.to(guid).emit('message', messageData);
-            const chatroomRef = database.ref(`chatrooms/${guid}/users/${messageData.sender}/messages`);
-            const newMessageRef = chatroomRef.push();
+            let chatroomRef = database.ref(`chatrooms/${guid}/users/${messageData.sender}/messages`);
+            let newMessageRef = chatroomRef.push();
             newMessageRef.set({
                 text: messageData.text,
                 timestamp: messageData.timestamp,
@@ -116,6 +116,13 @@ io.on('connection', (socket) => {
 
             if (respond) {
                 io.to(guid).emit('message', { sender: lobbies[guid].chatbot.botname, text: respond });
+
+                chatroomRef = database.ref(`chatrooms/${guid}/users/BOT/messages`);
+                newMessageRef = chatroomRef.push();
+                newMessageRef.set({
+                    text: respond,
+                    timestamp: '',
+                });
             }
         }
     });
@@ -148,6 +155,14 @@ io.on('connection', (socket) => {
                 let botPrompt = await chatbotInstance.getInitialQuestion();
 
                 io.to(guid).emit('message', { text: botPrompt, sender: chatbotInstance.botname });
+
+                let chatroomRef = database.ref(`chatrooms/${guid}/users/BOT/messages`);
+                let newMessageRef = chatroomRef.push();
+                newMessageRef.set({
+                    text: botPrompt,
+                    timestamp: '',
+                });
+    
                 lobbies[guid].botInitialized = true;
 
                 lobbies[guid].chatbot = chatbotInstance;
@@ -184,6 +199,13 @@ io.on('connection', (socket) => {
             let conclusionMessage = await chatbotInstance.startConclusion(timeLeft);
 
             io.to(guid).emit('message', { text: conclusionMessage, sender: chatbotInstance.botname });
+
+            let chatroomRef = database.ref(`chatrooms/${guid}/users/BOT/messages`);
+            let newMessageRef = chatroomRef.push();
+            newMessageRef.set({
+                text: conclusionMessage,
+                timestamp: '',
+            });
         }
     });
 
