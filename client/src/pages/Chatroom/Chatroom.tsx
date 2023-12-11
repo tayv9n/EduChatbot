@@ -22,6 +22,7 @@ export function Chatroom(props: ChatroomProps) {
   const [name, setName] = useState('Guest');
   const [masterMessages, setMasterMessages] = useState<JSX.Element[]>([]);
   const [disabled, setDisabled] = useState(false);
+  const [inactivity, setInactivity] = useState('pending');
 
   useEffect(() => {
     // Retrieve the name parameter from the URL
@@ -74,12 +75,20 @@ export function Chatroom(props: ChatroomProps) {
             time={chatTime} 
             socket={props.socket} 
             code={code} name={name} 
-            messages={masterMessages} 
-            setDisabled={setDisabled}/>
+            messages={masterMessages}
+            setDisabled={setDisabled}
+            inactivity={inactivity}
+            setInactivity={setInactivity}/>
         </div>
         <div className='body-container'>
           <ChatHeader chatname={chatName} topic={chatTopic} />
-          <ChatBox socket={props.socket} code={code} setMasterMessages={setMasterMessages} disabled={disabled}/>
+          <ChatBox 
+            socket={props.socket} 
+            code={code} 
+            setMasterMessages={setMasterMessages} 
+            disabled={disabled}
+            inactivity={inactivity}
+            setInactivity={setInactivity}/>
         </div>
       </div>
     </div>
@@ -93,6 +102,8 @@ interface SideBarProps {
   name : String;
   messages : JSX.Element[];
   setDisabled : StateSetter<boolean>;
+  inactivity : string;
+  setInactivity : StateSetter<string>;
 }
 
 function SideBar(props : SideBarProps) {
@@ -168,7 +179,9 @@ function SideBar(props : SideBarProps) {
           time={time} 
           socket={props.socket} 
           code={props.code} 
-          setDisabled={props.setDisabled}/>
+          setDisabled={props.setDisabled}
+          inactivity={props.inactivity}
+          setInactivity={props.setInactivity}/>
       </div>
 
       <div className='exit-position'>
@@ -210,10 +223,11 @@ interface ChatBoxProps {
   socket: Socket;
   setMasterMessages : StateSetter<JSX.Element[]>
   disabled : boolean;
+  inactivity : string;
+  setInactivity : StateSetter<string>;
 }
 
 function ChatBox(props: ChatBoxProps) {
-
   const [messages, setMessages] = useState<JSX.Element[]>([]);
   const [name, setName] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -254,12 +268,20 @@ function ChatBox(props: ChatBoxProps) {
     props.socket.on('message', (messageData: MessageDataProps) => {
       setMessages(prevMessages => [...prevMessages, <Message user={messageData.sender} message={messageData.text} timestamp={messageData.timestamp}/>]);
       props.setMasterMessages(prevMessages => [...prevMessages, <Message user={messageData.sender} message={messageData.text} timestamp={messageData.timestamp}/>]);
+      props.setInactivity('message');
     });
 
     return () => {
       props.socket.off('message');
     };
   }, [props.socket]);
+
+  useEffect(() => {
+    if (props.inactivity === 'inactive') {
+      props.setInactivity('message');
+      props.socket.emit('lobbyInactivity', props.code);
+    }
+  });
 
   useEffect(() => {
     if (inputRef.current) {
@@ -385,10 +407,13 @@ interface TimerProps {
   socket : Socket;
   code : String;
   setDisabled : StateSetter<boolean>;
+  inactivity : string;
+  setInactivity : StateSetter<string>;
 }
 
 function Timer(props : TimerProps) {
   const [seconds, setSeconds] = useState<number>(60 * -1);
+  const [inactivitySeconds, setInactivitySeconds] = useState(0);
 
   useEffect(() => {
     setSeconds(60 * props.time);
@@ -405,10 +430,26 @@ function Timer(props : TimerProps) {
           return 0;
         }
       });
+
+      setInactivitySeconds(prevSeconds => prevSeconds + 1);
+
     }, 1000);
 
     return () => clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    if (inactivitySeconds > 60) {
+      props.setInactivity('inactive');
+    }
+  })
+
+  useEffect(() => {
+    if (props.inactivity === 'message') {
+      props.setInactivity('pending');
+      setInactivitySeconds(0);
+    }
+  })
 
   useEffect(() => {
     if (seconds === 60) {

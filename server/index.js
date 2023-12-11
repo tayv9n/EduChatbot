@@ -67,7 +67,7 @@ io.on('connection', (socket) => {
         const roomExists = io.sockets.adapter.rooms.has(guid);
         console.log(roomExists);
 
-        lobbies[guid] = { users: {}, roomStarted: false, botInitialized: false, hostUserame: username, chatbot: null, chatData: null, conclusionStarted: false };
+        lobbies[guid] = { users: {}, roomStarted: false, botInitialized: false, hostUserame: username, chatbot: null, chatData: null, conclusionStarted: false, inactivity: false };
 
         lobbies[guid].users[username] = 0;
         socket.emit('lobbyCreated', guid);
@@ -111,10 +111,11 @@ io.on('connection', (socket) => {
     // be sure to do the same with the chatbot messages so they
     // end up in the correct room.
     socket.on('lobbyMessage', async (guid, messageData) => {
-
-        // console.log(lobbies);
         if (lobbies[guid]) {
             io.to(guid).emit('message', messageData);
+
+            lobbies[guid].inactivity = false;
+
             let chatroomRef = database.ref(`chatrooms/${guid}/users/${messageData.sender}/messages`);
             let newMessageRef = chatroomRef.push();
             newMessageRef.set({
@@ -203,6 +204,25 @@ io.on('connection', (socket) => {
             io.to(guid).emit('chatData', lobbies[guid].chatData);
         }
     });
+
+    socket.on('lobbyInactivity', async (guid) => {
+        if (lobbies[guid] && !lobbies[guid].inactivity) {
+            lobbies[guid].inactivity = true;
+
+            let chatbotInstance = lobbies[guid].chatbot;
+
+            let inactivityMessage = await chatbotInstance.inactivityResponse();
+
+            io.to(guid).emit('message', { text: inactivityMessage, sender: chatbotInstance.botname });
+
+            let chatroomRef = database.ref(`chatrooms/${guid}/users/BOT/messages`);
+            let newMessageRef = chatroomRef.push();
+            newMessageRef.set({
+                text: inactivityMessage,
+                timestamp: formatTimestamp(new Date().getTime()),
+            });
+        }
+    })
 
     // starts chat conclusion, prompts chatbot
     socket.on('chatStartConclusionPhase', async (guid, timeLeft) => {
