@@ -110,12 +110,14 @@ function ChatHeader(props: ChatHeaderProps) {
 interface MessageProps {
   user: string;
   message: string;
+  timestamp: string;
 }
 
 interface MessageDataProps {
   text: string;
   sender: string;
   lobbyId: string;
+  timestamp: string;
 };
 
 interface ChatBoxProps {
@@ -169,7 +171,7 @@ function ChatBox(props: ChatBoxProps) {
 
   useEffect(() => {
     props.socket.on('message', (messageData: MessageDataProps) => {
-      setMessages(prevMessages => [...prevMessages, <Message user={messageData.sender} message={messageData.text} />]);
+      setMessages(prevMessages => [...prevMessages, <Message user={messageData.sender} message={messageData.text} timestamp={messageData.timestamp}/>]);
     });
 
     return () => {
@@ -229,7 +231,8 @@ function ChatBox(props: ChatBoxProps) {
       let messageData = {
         text: input,
         sender: name,
-        lobbyId: props.code
+        lobbyId: props.code,
+        timestamp: formatTimestamp(new Date().getTime()),
       };
 
       console.log(` LOBBY ID: ${props.code}, sending ${input}`);
@@ -279,3 +282,18 @@ function ChatBox(props: ChatBoxProps) {
     </div>
   )
 }
+
+const formatTimestamp = (timestamp: number) => {
+  const date = new Date(timestamp);
+  const options: Intl.DateTimeFormatOptions = {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  };
+
+  return date.toLocaleString('en-US', options);
+};

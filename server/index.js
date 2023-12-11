@@ -3,6 +3,8 @@ const http = require('http');
 const socketIo = require('socket.io');
 const { OpenAI } = require("openai");
 const ChatBot = require("./chatbot/chatbot.js");
+const admin = require('firebase-admin');
+
 // Initialize the express application
 const app = express();
 
@@ -17,17 +19,30 @@ const io = socketIo(server, {
     }
 });
 
+// Initialize Firebase Admin SDK 
+const serviceAccount = require('./database.json');
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: "https://ai-chatbot-65272-default-rtdb.firebaseio.com"
+});
+
+const database = admin.database();
+
 // Lobby management
 const lobbies = {};
+
+// Timer duration (60 seconds for now) 
+const duration = 60 * 1000;
 
 // Function to generate a unique 4-character GUID
 // We can modify this to be whatever we want.
 function generateGUID() {
-    return Math.random().toString(36).substring(2, 6);
+    return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
 // Socket.io logic
 io.on('connection', (socket) => {
+    let timer;
     // Lobby creation
     socket.on('createLobby', async (username) => {
         const guid = generateGUID();
@@ -75,6 +90,7 @@ io.on('connection', (socket) => {
             socket.join(guid);
             lobbies[guid].users[username] = 0;
             socket.emit('joinedLobby', guid);
+
             io.to(guid).emit('userJoinedLobby', username);
         } else {
             socket.emit('lobbyError', 'Error joining lobby');
@@ -102,6 +118,13 @@ io.on('connection', (socket) => {
         // console.log(lobbies);
         if (lobbies[guid]) {
             io.to(guid).emit('message', messageData);
+            const chatroomRef = database.ref(`chatrooms/${guid}/users/${messageData.sender}/messages`);
+            const newMessageRef = chatroomRef.push();
+            newMessageRef.set({
+                text: messageData.text,
+                timestamp: messageData.timestamp,
+            });
+
             console.log(` > BROADCASTING: ${messageData.text} FROM: ${messageData.sender}; TO: ${lobbies[guid].users[lobbies[guid].hostUserame]}`);
 
             let respond = await lobbies[guid].chatbot.botMessageListener(messageData.sender, messageData.text);
@@ -176,6 +199,7 @@ io.on('connection', (socket) => {
 
     // Disconnect logic
     socket.on('disconnect', () => {
+        clearTimeout(timer);
         // Iterate through all lobbies to remove the disconnected user
         for (const guid in lobbies) {
             if (lobbies[guid].users[socket.username]) {
