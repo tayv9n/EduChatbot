@@ -2,26 +2,59 @@ import React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import './Chatroom.css'
 import { Socket } from 'socket.io-client';
-// import { Socket } from 'socket.io';
 
+interface ChatroomItems {
+  time: number;
+  chatName: string;
+  chatTopic: string;
+}
 interface ChatroomProps {
   socket: Socket;
 }
 
 export function Chatroom(props: ChatroomProps) {
   const [code, setCode] = useState('');
+  const [chatName, setChatName] = useState('');
+  const [chatTime, setChatTime] = useState(1);
+  const [chatTopic, setChatTopic] = useState('');
+  const [name, setName] = useState('Guest');
 
   useEffect(() => {
     // Retrieve the name parameter from the URL
     const searchParams = new URLSearchParams(window.location.search);
     const idFromURL = searchParams.get('id') || '....';
+    const nameFromURL = searchParams.get('name');
+
+    if (nameFromURL !== null) {
+      const decodedName = decodeURIComponent(nameFromURL);
+      // Now decodedName is guaranteed to be a string
+      setName(decodedName);
+    };
 
     // Set the name
     setCode(() => idFromURL);
 
-    //socket recieve topic and name of chat
-
   }, [setCode]);
+
+  useEffect(() => {
+    props.socket.on('joinedChatroom', (guid : any) => {
+      console.log("Recieved Ping");
+      props.socket.emit('getChatData', code);
+      console.log(code);
+      console.log("sent Ping");
+    });
+
+  }, [props.socket, code]);
+
+  useEffect(() => {
+    props.socket.on('chatData', (chatItems : ChatroomItems) => {
+
+      setChatName(chatItems.chatName);
+      setChatTime(chatItems.time);
+      setChatTopic(chatItems.chatTopic);
+    });
+  }, []);
+
 
   return (
     <div style={{
@@ -32,9 +65,9 @@ export function Chatroom(props: ChatroomProps) {
         <p>{'Chatroom: ' + code}</p>
       </div>
       <div style={{ display: 'flex' }}>
-        <div className='side-bar'><SideBar /></div>
+        <div className='side-bar'><SideBar time={chatTime} socket={props.socket} code={code} name={name}/></div>
         <div className='body-container'>
-          <ChatHeader chatname='IN4MATX 117 Discussion' topic='Software Design' />
+          <ChatHeader chatname={chatName} topic={chatTopic} />
           <ChatBox socket={props.socket} code={code} />
         </div>
       </div>
@@ -42,10 +75,20 @@ export function Chatroom(props: ChatroomProps) {
   );
 }
 
+interface SideBarProps {
+  time: number;
+  socket: Socket;
+  code: String;
+  name : String;
+}
 
-
-function SideBar() {
+function SideBar(props : SideBarProps) {
   const [isPopupVisible, setPopupVisible] = useState(false);
+  const [time, setTime] = useState(props.time);
+
+  useEffect(() => {
+    setTime(props.time);
+  }, [props.time]);
 
   const togglePopup = () => {
     setPopupVisible(!isPopupVisible);
@@ -54,6 +97,14 @@ function SideBar() {
   const handleExport = () => {
     // Add logic for export button
     console.log('Exported!');
+  };
+
+  const handleChatroomLeave = () => {
+    if (props.socket && props.code) {
+      props.socket.emit('leaveLobby', props.code, props.name);
+    }
+    
+    window.location.href = 'home';
   };
 
   return (
@@ -86,9 +137,13 @@ function SideBar() {
         </div>
       </div>
 
-      <a href="home" className='exit-position'>
-        <button className='exit-button'>Quit Chatroom</button>
-      </a>
+      <div style={{ marginTop: '20px' }}>
+        <Timer time={time} socket={props.socket} code={props.code}/>
+      </div>
+
+      <div className='exit-position'>
+        <button className='exit-button' onClick={handleChatroomLeave}>Quit Chatroom</button>
+      </div>
     </div>
   )
 }
@@ -136,12 +191,6 @@ function ChatBox(props: ChatBoxProps) {
       props.socket.emit('joinRoom', props.code, name);
     }
 
-    // Optionally, handle leaving the room when the component unmounts
-    return () => {
-      if (props.socket && props.code) {
-        props.socket.emit('leaveRoom', props.code);
-      }
-    };
   }, [props.socket, props.code, name]);
 
   useEffect(() => {
@@ -235,8 +284,7 @@ function ChatBox(props: ChatBoxProps) {
       console.log(` LOBBY ID: ${props.code}, sending ${input}`);
 
       props.socket.emit('lobbyMessage', props.code, messageData);
-
-      // setMessages([...messages, <Message user={name} message={input} />]);
+      
       setInput('');
     };
 
@@ -278,4 +326,72 @@ function ChatBox(props: ChatBoxProps) {
       <MessageInput />
     </div>
   )
+}
+
+interface TimerProps {
+  time : number;
+  socket : Socket;
+  code : String;
+}
+
+function Timer(props : TimerProps) {
+  const [seconds, setSeconds] = useState<number>(60 * 0);
+
+  useEffect(() => {
+    setSeconds(60 * props.time);
+  }, [props.time]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setSeconds((prevSeconds) => prevSeconds - 1);
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    if (seconds === 60) {
+      props.socket.emit('chatStartConclusionPhase', props.code, 1);
+    }
+  })
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const remainingSeconds = time % 60;
+    return (
+      <p style={{ margin: 0, marginTop: 10, fontSize: '20px', fontWeight: 'bold'}}>
+        <span style={{ backgroundColor: 'white', padding: '7px 14px', borderRadius: '4px', width: '20px', display: 'inline-block' }}>
+          {minutes}
+        </span>{' '}
+        m
+        {' '}<span style={{ backgroundColor: 'white', padding: '7px 14px', borderRadius: '4px', width: '20px', display: 'inline-block' }}>
+          {remainingSeconds}
+        </span>{' '}
+        s
+      </p>
+    );
+  };
+
+  return (
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column',
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      marginLeft: '25px',
+      marginRight: '25px',
+      border: '2px solid #D7DBDB', 
+      borderRadius: '8px', 
+      padding: '8px',
+      color: 'black',
+      backgroundColor: '#D7DBDB',
+    }}>
+      <p style={{ margin: 0, fontSize: '20px', color: '#527785', fontWeight: 'bold' }}>
+        Timer
+      </p>
+      <p style={{ margin: '8px 0'}}>
+        {formatTime(seconds)}
+      </p>
+    </div>
+  );
 }

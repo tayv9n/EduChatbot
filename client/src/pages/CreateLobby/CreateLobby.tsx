@@ -3,10 +3,13 @@ import './CreateLobby.css';
 import { BotSettings } from './BotSettings';
 import { LobbySettings } from './LobbySettings';
 import { Socket } from 'socket.io-client';
-// import { Socket } from 'socket.io';
 
 interface CreateLobbyProps {
   socket: Socket;
+}
+
+interface UserListLobby {
+  userList : Array<String>;
 }
 
 export function CreateLobby(props: CreateLobbyProps) {
@@ -17,14 +20,7 @@ export function CreateLobby(props: CreateLobbyProps) {
   const [assertiveness, setAssertiveness] = useState(2);
   const [topic, setTopic] = useState('');
   const [chatName, setChatName] = useState('Discussion');
-
-  // useEffect(() => {
-  //   props.socket.emit('createLobby', name);
-  // }, []);
-
-  // props.socket.on('lobbyCreated', (newLobbyId) => {
-  //   setLobbyId(newLobbyId);
-  // });
+  const [userCount, setUserCount] = useState(1);
 
   useEffect(() => {
     // Retrieve the name parameter from the URL
@@ -73,6 +69,26 @@ export function CreateLobby(props: CreateLobbyProps) {
     }
   };
 
+  useEffect(() => {
+    props.socket.emit('getUserListOfLobby', lobbyId);
+
+    const intervalId = setInterval(() => {
+      props.socket.emit('getUserListOfLobby', lobbyId);
+    }, 3000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [lobbyId, props.socket]);
+
+  useEffect(() => {
+    props.socket.on('userListOfLobbyResponse', (userListObj : UserListLobby) => {
+      setUserCount(userListObj.userList.length);
+    })
+
+    props.socket.on('userListOfLobbyResponseError', () => {});
+  }, []);
+
 
   return (
     <div>
@@ -99,7 +115,7 @@ export function CreateLobby(props: CreateLobbyProps) {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', padding: 40 }}>
         <BotSettings setBotName={setBotName} setAssertiveness={setAssertiveness} />
-        <LobbySettings setChatTime={setChatTime} setTopic={setTopic} setChatName={setChatName} userCount={5} />
+        <LobbySettings setChatTime={setChatTime} setTopic={setTopic} setChatName={setChatName} userCount={userCount} />
       </div>
     </div>
   );

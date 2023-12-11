@@ -25,6 +25,7 @@ class ChatBot {
         this.behaviorPrompt = readFileContent("chatbot/behavior_prompt.txt");
         this.chimePrompt = readFileContent("chatbot/chime_prompt.txt");
         this.participationPrompt = readFileContent("chatbot/participation_prompt.txt");
+        this.conclusionPrompt = "There is only {{time}} minute left in this discussion. Please prompt the users to wrap up their discussion by supplying their final remarks.";
 
         this.behaviorPrompt = this.behaviorPrompt.replace("{{users}}", users.toString());
         this.behaviorPrompt = this.behaviorPrompt.replace("{{topic}}", topic);
@@ -33,20 +34,7 @@ class ChatBot {
         this.behaviorMessages = [{role: "system", content: this.behaviorPrompt}];
         this.chimeMessages = [{role: "system", content: this.chimePrompt}];
 
-        console.log("Object constructed. Now initialize Prompts.")
-        // return initial question
-        
-
-        // Initialize ChatBot
-        // Needs to know the names of users in lobby
-        // Needs the topic of the discussion
-
-        // Variables:
-        // messageBacklog: all the messages that have been send but not sent in api call
-        // userList: names of users
-        // messageRatios: ratios of users and their participation
-        // messageCount: count of messages
-
+        // CALL INITIALIZE PROMPTING AFTER CONSTRUCTOR
     }
 
     async initializePrompting() {
@@ -132,15 +120,18 @@ class ChatBot {
         return null;
     }
 
-    startConclusion() {
-        // Alert if time is running out, starts the conclusion phase  vb
+    // Alert if time is running out, starts the conclusion phase
+    async startConclusion(timeLeft) {
+        let response = await this.sendMessage(2, timeLeft);
+        return response;
     }
 
+    // when no one has sent a message in a while
     inactivityResponse() {
-        // when no one has sent a message in a while
+        
     }
 
-    async sendMessage(messageCase, user="") {
+    async sendMessage(messageCase, user="", time=0) {
         // recieves input and sends response to groupchat
         switch (messageCase) {
             case 0:
@@ -150,6 +141,19 @@ class ChatBot {
                 });
 
                 this.behaviorMessages.push({role: "assistant", content: completion.choices[0].message.content});
+
+                if (completion.choices[0].message.content.length > 200) {
+                    this.behaviorMessages.push({role: "system", content: "Please reiterate your last response, but shorten it to less than 150 characters."});
+
+                    completion  = await openai.chat.completions.create({
+                        messages: this.behaviorMessages,
+                        model: "gpt-3.5-turbo-1106"
+                    });
+
+                    this.behaviorMessages.push({role: "assistant", content: completion.choices[0].message.content});
+
+                    return completion.choices[0].message.content;
+                }
 
                 return completion.choices[0].message.content;
 
@@ -163,12 +167,24 @@ class ChatBot {
                     model: "gpt-3.5-turbo-1106"
                 });
 
-                this.behaviorMessages.push({role: "assistant", content: completion.choices[0].message.content});
+                this.behaviorMessages.push({role: "assistant", content: completion1.choices[0].message.content});
 
                 return completion1.choices[0].message.content;
 
             case 2:
-                return "not implemented";
+                // Conclusion prompt. replace with time (minutes) left in discussion
+                let conclusionPrompt = this.conclusionPrompt.replace("{{time}}", time);
+
+                this.behaviorMessages.push({role: "system", content: conclusionPrompt});
+
+                let completion2  = await openai.chat.completions.create({
+                    messages: this.behaviorMessages,
+                    model: "gpt-3.5-turbo-1106"
+                });
+
+                this.behaviorMessages.push({role: "assistant", content: completion2.choices[0].message.content});
+
+                return completion2.choices[0].message.content;
             case 3:
                 return "not implemented";
 
