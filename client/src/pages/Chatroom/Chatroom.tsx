@@ -341,13 +341,21 @@ function Timer(props : TimerProps) {
     setSeconds(60 * props.time);
   }, [props.time]);
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setSeconds((prevSeconds) => prevSeconds - 1);
-    }, 1000);
+useEffect(() => {
+  const intervalId = setInterval(() => {
+    setSeconds((prevSeconds) => {
+      if (prevSeconds > 0) {
+        return prevSeconds - 1;
+      } else {
+        // If the remaining time is zero or negative, clear the interval
+        clearInterval(intervalId);
+        return 0;
+      }
+    });
+  }, 1000);
 
-    return () => clearInterval(intervalId);
-  }, []);
+  return () => clearInterval(intervalId);
+}, []);
 
   useEffect(() => {
     if (seconds === 60) {
