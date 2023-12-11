@@ -39,9 +39,6 @@ export function JoinLobby(props : JoinLobbyProps) {
   
     // Listen for the server's response
     props.socket.on('joinedLobby', (guid) => {
-      // Emit a Socket.IO event to get list of users
-      props.socket.emit('getUserListOfLobby', guid)
-
       setLobbyState('Joined');
       setDisabled(true);
     });
@@ -53,13 +50,6 @@ export function JoinLobby(props : JoinLobbyProps) {
   };
 
   React.useEffect(() => {
-    const handleUserList = (userlist: string[]) => {
-      setUserList(userlist);
-  
-      // Turn off the event listener after it has been used once
-      props.socket.off('userList', handleUserList);
-    };
-  
     const handleChatStarted = () => {
       const encodedId = encodeURIComponent(code);
       window.location.href = `chatroom?name=${name}&id=${encodedId}`;
@@ -69,16 +59,37 @@ export function JoinLobby(props : JoinLobbyProps) {
     };
   
     // Set up event listeners
-    props.socket.on('userList', handleUserList);
     props.socket.on('chatStarted', handleChatStarted);
   
     // Clean up event listeners when the component unmounts
     return () => {
       // Turn off event listeners
-      props.socket.off('userList', handleUserList);
       props.socket.off('chatStarted', handleChatStarted);
     };
   }, [code, name]);
+
+  React.useEffect(() => {
+    if (lobbyState === "Joined") {
+      props.socket.emit('getUserListOfLobby', code)
+    }
+
+    const intervalId = setInterval(() => {
+      props.socket.emit('getUserListOfLobby', code);
+      console.log(userList);
+    }, 3000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [code, lobbyState, props.socket]);
+
+  React.useEffect(() => {
+    props.socket.on('userListOfLobbyResponse', (userListObj: {userList: string[]}) => {
+      setUserList(userListObj.userList);
+    })
+
+    props.socket.on('userListOfLobbyResponseError', () => {});
+  }, []);
 
   return (
     //three main sections: screen, content box, members box
@@ -138,9 +149,6 @@ function LobbyInformation(props : LobbbyInformationProps) {
     setBoxes(initialBoxes);
     setIndex(props.users.length-1);
   }, [props.users]);
-
-  // NEED TO MAKE UPDATE WHEN NEW USERS JOIN
-
 
   const UserBox = (props : UserBoxProps) => {
     return (
