@@ -28,11 +28,24 @@ admin.initializeApp({
 
 const database = admin.database();
 
+function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    const options = {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+    };
+
+    return date.toLocaleString('en-US', options);
+}
+
+
 // Lobby management
 const lobbies = {};
-
-// Timer duration (60 seconds for now) 
-const duration = 60 * 1000;
 
 // Function to generate a unique 4-character GUID
 // We can modify this to be whatever we want.
@@ -42,7 +55,6 @@ function generateGUID() {
 
 // Socket.io logic
 io.on('connection', (socket) => {
-    let timer;
     // Lobby creation
     socket.on('createLobby', async (username) => {
         const guid = generateGUID();
@@ -121,7 +133,7 @@ io.on('connection', (socket) => {
                 newMessageRef = chatroomRef.push();
                 newMessageRef.set({
                     text: respond,
-                    timestamp: '',
+                    timestamp: formatTimestamp(new Date().getTime()),
                 });
             }
         }
@@ -160,7 +172,7 @@ io.on('connection', (socket) => {
                 let newMessageRef = chatroomRef.push();
                 newMessageRef.set({
                     text: botPrompt,
-                    timestamp: '',
+                    timestamp: formatTimestamp(new Date().getTime()),
                 });
     
                 lobbies[guid].botInitialized = true;
@@ -204,7 +216,7 @@ io.on('connection', (socket) => {
             let newMessageRef = chatroomRef.push();
             newMessageRef.set({
                 text: conclusionMessage,
-                timestamp: '',
+                timestamp: formatTimestamp(new Date().getTime()),
             });
         }
     });
@@ -224,7 +236,6 @@ io.on('connection', (socket) => {
 
     // Disconnect logic
     socket.on('disconnect', () => {
-        clearTimeout(timer);
         // Iterate through all lobbies to remove the disconnected user
         for (const guid in lobbies) {
             if (lobbies[guid].users[socket.username]) {

@@ -2,6 +2,7 @@ import React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import './Chatroom.css'
 import { Socket } from 'socket.io-client';
+import { saveAs } from 'file-saver'; // npm install file-saver
 
 type StateSetter<T> = React.Dispatch<React.SetStateAction<T>>;
 interface ChatroomItems {
@@ -98,8 +99,21 @@ function SideBar(props : SideBarProps) {
   };
 
   const handleExport = () => {
-    //props.messages
-    console.log('Exported!');
+    const csvContent =
+      'Sender,Text,Timestamp\n' +
+      props.messages.map((message: any) => {
+          const user = message.props.user;
+          const text = message.props.message;
+          const timestamp = message.props.timestamp || '';
+
+          return `"${user}","${text}","${timestamp}"`;
+        })
+        .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+
+    const filename = `chat_export_${props.code}.csv`;
+    saveAs(blob, filename);
   };
 
   const handleChatroomLeave = () => {
