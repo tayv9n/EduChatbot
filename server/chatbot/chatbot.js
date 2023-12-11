@@ -16,6 +16,13 @@ class ChatBot {
         this.botname = botname;
         this.assertiveness = assertiveness;
 
+        if (this.assertiveness == 1) {
+            this.participationRatio = 0.05;
+        } else if (this.assertiveness == 2) {
+            this.participationRatio = 0.15;
+        } else {this.participationRatio = 0.25;}
+        
+
         console.log("initialized variables");
 
         this.messageRatios = [];
@@ -95,13 +102,7 @@ class ChatBot {
 
     participationTracker(userName) {
         // refreshes ratios and checks if someone isnt participating enough
-        // if not, 
-
         const index = this.users.indexOf(userName);
-        if (index === -1) {
-          // ERROR
-        }
-
         this.messageCount++;
 
         this.countPerUser[index] += 1;
@@ -113,7 +114,7 @@ class ChatBot {
     
         // Check for ratios less than 0.05
         for (let i = 0; i < this.users.length; i++) {
-          if (this.messageRatios[i] < 0.05) {
+          if (this.messageRatios[i] < this.participationRatio) {
             return this.users[i];
           }
         }
@@ -127,8 +128,9 @@ class ChatBot {
     }
 
     // when no one has sent a message in a while
-    inactivityResponse() {
-        
+    async inactivityResponse() {
+        let response = await this.sendMessage(3);
+        return response;
     }
 
     async sendMessage(messageCase, user="", time=0) {
@@ -186,7 +188,17 @@ class ChatBot {
 
                 return completion2.choices[0].message.content;
             case 3:
-                return "not implemented";
+                // inactivity prompt
+                this.behaviorMessages.push({role: "system", content: "No messages have been sent in some time. Please bring this up to the users and ask them a follow up question."});
+
+                let completion3  = await openai.chat.completions.create({
+                    messages: this.behaviorMessages,
+                    model: "gpt-3.5-turbo-1106"
+                });
+
+                this.behaviorMessages.push({role: "assistant", content: completion3.choices[0].message.content});
+
+                return completion3.choices[0].message.content;
 
         }
 

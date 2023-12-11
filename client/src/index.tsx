@@ -9,8 +9,8 @@ const root = createRoot(document.getElementById('app')!);
 
 root.render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
   </StrictMode>
 );

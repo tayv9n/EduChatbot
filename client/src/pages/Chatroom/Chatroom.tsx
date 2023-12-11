@@ -2,7 +2,9 @@ import React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import './Chatroom.css'
 import { Socket } from 'socket.io-client';
+import { saveAs } from 'file-saver'; // npm install file-saver
 
+type StateSetter<T> = React.Dispatch<React.SetStateAction<T>>;
 interface ChatroomItems {
   time: number;
   chatName: string;
@@ -18,6 +20,9 @@ export function Chatroom(props: ChatroomProps) {
   const [chatTime, setChatTime] = useState(1);
   const [chatTopic, setChatTopic] = useState('');
   const [name, setName] = useState('Guest');
+  const [masterMessages, setMasterMessages] = useState<JSX.Element[]>([]);
+  const [disabled, setDisabled] = useState(false);
+  const [inactivity, setInactivity] = useState('pending');
 
   useEffect(() => {
     // Retrieve the name parameter from the URL
@@ -65,10 +70,25 @@ export function Chatroom(props: ChatroomProps) {
         <p>{'Chatroom: ' + code}</p>
       </div>
       <div style={{ display: 'flex' }}>
-        <div className='side-bar'><SideBar time={chatTime} socket={props.socket} code={code} name={name}/></div>
+        <div className='side-bar'>
+          <SideBar 
+            time={chatTime} 
+            socket={props.socket} 
+            code={code} name={name} 
+            messages={masterMessages}
+            setDisabled={setDisabled}
+            inactivity={inactivity}
+            setInactivity={setInactivity}/>
+        </div>
         <div className='body-container'>
           <ChatHeader chatname={chatName} topic={chatTopic} />
-          <ChatBox socket={props.socket} code={code} />
+          <ChatBox 
+            socket={props.socket} 
+            code={code} 
+            setMasterMessages={setMasterMessages} 
+            disabled={disabled}
+            inactivity={inactivity}
+            setInactivity={setInactivity}/>
         </div>
       </div>
     </div>
@@ -80,6 +100,10 @@ interface SideBarProps {
   socket: Socket;
   code: String;
   name : String;
+  messages : JSX.Element[];
+  setDisabled : StateSetter<boolean>;
+  inactivity : string;
+  setInactivity : StateSetter<string>;
 }
 
 function SideBar(props : SideBarProps) {
@@ -95,8 +119,21 @@ function SideBar(props : SideBarProps) {
   };
 
   const handleExport = () => {
-    // Add logic for export button
-    console.log('Exported!');
+    const csvContent =
+      'Sender,Text,Timestamp\n' +
+      props.messages.map((message: any) => {
+          const user = message.props.user;
+          const text = message.props.message;
+          const timestamp = message.props.timestamp || '';
+
+          return `"${user}","${text}","${timestamp}"`;
+        })
+        .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+
+    const filename = `chat_export_${props.code}.csv`;
+    saveAs(blob, filename);
   };
 
   const handleChatroomLeave = () => {
@@ -138,7 +175,13 @@ function SideBar(props : SideBarProps) {
       </div>
 
       <div style={{ marginTop: '20px' }}>
-        <Timer time={time} socket={props.socket} code={props.code}/>
+        <Timer 
+          time={time} 
+          socket={props.socket} 
+          code={props.code} 
+          setDisabled={props.setDisabled}
+          inactivity={props.inactivity}
+          setInactivity={props.setInactivity}/>
       </div>
 
       <div className='exit-position'>
@@ -165,21 +208,26 @@ function ChatHeader(props: ChatHeaderProps) {
 interface MessageProps {
   user: string;
   message: string;
+  timestamp: string;
 }
 
 interface MessageDataProps {
   text: string;
   sender: string;
   lobbyId: string;
+  timestamp: string;
 };
 
 interface ChatBoxProps {
   code: string;
   socket: Socket;
+  setMasterMessages : StateSetter<JSX.Element[]>
+  disabled : boolean;
+  inactivity : string;
+  setInactivity : StateSetter<string>;
 }
 
 function ChatBox(props: ChatBoxProps) {
-
   const [messages, setMessages] = useState<JSX.Element[]>([]);
   const [name, setName] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -218,13 +266,22 @@ function ChatBox(props: ChatBoxProps) {
 
   useEffect(() => {
     props.socket.on('message', (messageData: MessageDataProps) => {
-      setMessages(prevMessages => [...prevMessages, <Message user={messageData.sender} message={messageData.text} />]);
+      setMessages(prevMessages => [...prevMessages, <Message user={messageData.sender} message={messageData.text} timestamp={messageData.timestamp}/>]);
+      props.setMasterMessages(prevMessages => [...prevMessages, <Message user={messageData.sender} message={messageData.text} timestamp={messageData.timestamp}/>]);
+      props.setInactivity('message');
     });
 
     return () => {
       props.socket.off('message');
     };
   }, [props.socket]);
+
+  useEffect(() => {
+    if (props.inactivity === 'inactive') {
+      props.setInactivity('message');
+      props.socket.emit('lobbyInactivity', props.code);
+    }
+  });
 
   useEffect(() => {
     if (inputRef.current) {
@@ -278,7 +335,8 @@ function ChatBox(props: ChatBoxProps) {
       let messageData = {
         text: input,
         sender: name,
-        lobbyId: props.code
+        lobbyId: props.code,
+        timestamp: formatTimestamp(new Date().getTime()),
       };
 
       console.log(` LOBBY ID: ${props.code}, sending ${input}`);
@@ -298,6 +356,7 @@ function ChatBox(props: ChatBoxProps) {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Message"
             className='message-input'
+            disabled={props.disabled}
           />
           <button type="submit" className='message-button'>
             <img
@@ -328,14 +387,33 @@ function ChatBox(props: ChatBoxProps) {
   )
 }
 
+const formatTimestamp = (timestamp: number) => {
+  const date = new Date(timestamp);
+  const options: Intl.DateTimeFormatOptions = {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  };
+
+  return date.toLocaleString('en-US', options);
+};
+
 interface TimerProps {
   time : number;
   socket : Socket;
   code : String;
+  setDisabled : StateSetter<boolean>;
+  inactivity : string;
+  setInactivity : StateSetter<string>;
 }
 
 function Timer(props : TimerProps) {
-  const [seconds, setSeconds] = useState<number>(60 * 0);
+  const [seconds, setSeconds] = useState<number>(60 * -1);
+  const [inactivitySeconds, setInactivitySeconds] = useState(0);
 
   useEffect(() => {
     setSeconds(60 * props.time);
@@ -343,17 +421,45 @@ function Timer(props : TimerProps) {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setSeconds((prevSeconds) => prevSeconds - 1);
+      setSeconds((prevSeconds) => {
+        if (prevSeconds > 0) {
+          return prevSeconds - 1;
+        } else {
+          // If the remaining time is zero or negative, clear the interval
+          clearInterval(intervalId);
+          return 0;
+        }
+      });
+
+      setInactivitySeconds(prevSeconds => prevSeconds + 1);
+
     }, 1000);
 
     return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
+    if (inactivitySeconds > 60) {
+      props.setInactivity('inactive');
+    }
+  })
+
+  useEffect(() => {
+    if (props.inactivity === 'message') {
+      props.setInactivity('pending');
+      setInactivitySeconds(0);
+    }
+  })
+
+  useEffect(() => {
     if (seconds === 60) {
       props.socket.emit('chatStartConclusionPhase', props.code, 1);
     }
-  })
+  });
+
+  useEffect(() => {
+    if (seconds === 0) {props.setDisabled(true)};
+  });
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);

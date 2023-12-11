@@ -3,6 +3,8 @@ const http = require('http');
 const socketIo = require('socket.io');
 const { OpenAI } = require("openai");
 const ChatBot = require("./chatbot/chatbot.js");
+const admin = require('firebase-admin');
+
 // Initialize the express application
 const app = express();
 
@@ -17,13 +19,38 @@ const io = socketIo(server, {
     }
 });
 
+// Initialize Firebase Admin SDK 
+const serviceAccount = require('./database.json');
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: "https://ai-chatbot-65272-default-rtdb.firebaseio.com"
+});
+
+const database = admin.database();
+
+function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    const options = {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+    };
+
+    return date.toLocaleString('en-US', options);
+}
+
+
 // Lobby management
 const lobbies = {};
 
 // Function to generate a unique 4-character GUID
 // We can modify this to be whatever we want.
 function generateGUID() {
-    return Math.random().toString(36).substring(2, 6);
+    return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
 // Socket.io logic
@@ -40,7 +67,7 @@ io.on('connection', (socket) => {
         const roomExists = io.sockets.adapter.rooms.has(guid);
         console.log(roomExists);
 
-        lobbies[guid] = { users: {}, roomStarted: false, botInitialized: false, hostUserame: username, chatbot: null, chatData: null };
+        lobbies[guid] = { users: {}, roomStarted: false, botInitialized: false, hostUserame: username, chatbot: null, chatData: null, conclusionStarted: false, inactivity: false };
 
         lobbies[guid].users[username] = 0;
         socket.emit('lobbyCreated', guid);
@@ -60,6 +87,7 @@ io.on('connection', (socket) => {
             socket.join(guid);
             lobbies[guid].users[username] = 0;
             socket.emit('joinedLobby', guid);
+
             io.to(guid).emit('userJoinedLobby', username);
         } else {
             socket.emit('lobbyError', 'Error joining lobby');
@@ -83,16 +111,31 @@ io.on('connection', (socket) => {
     // be sure to do the same with the chatbot messages so they
     // end up in the correct room.
     socket.on('lobbyMessage', async (guid, messageData) => {
-
-        // console.log(lobbies);
         if (lobbies[guid]) {
             io.to(guid).emit('message', messageData);
+
+            lobbies[guid].inactivity = false;
+
+            let chatroomRef = database.ref(`chatrooms/${guid}/users/${messageData.sender}/messages`);
+            let newMessageRef = chatroomRef.push();
+            newMessageRef.set({
+                text: messageData.text,
+                timestamp: messageData.timestamp,
+            });
+
             console.log(` > BROADCASTING: ${messageData.text} FROM: ${messageData.sender}; TO: ${lobbies[guid].users[lobbies[guid].hostUserame]}`);
 
             let respond = await lobbies[guid].chatbot.botMessageListener(messageData.sender, messageData.text);
 
             if (respond) {
                 io.to(guid).emit('message', { sender: lobbies[guid].chatbot.botname, text: respond });
+
+                chatroomRef = database.ref(`chatrooms/${guid}/users/BOT/messages`);
+                newMessageRef = chatroomRef.push();
+                newMessageRef.set({
+                    text: respond,
+                    timestamp: formatTimestamp(new Date().getTime()),
+                });
             }
         }
     });
@@ -125,6 +168,14 @@ io.on('connection', (socket) => {
                 let botPrompt = await chatbotInstance.getInitialQuestion();
 
                 io.to(guid).emit('message', { text: botPrompt, sender: chatbotInstance.botname });
+
+                let chatroomRef = database.ref(`chatrooms/${guid}/users/BOT/messages`);
+                let newMessageRef = chatroomRef.push();
+                newMessageRef.set({
+                    text: botPrompt,
+                    timestamp: formatTimestamp(new Date().getTime()),
+                });
+    
                 lobbies[guid].botInitialized = true;
 
                 lobbies[guid].chatbot = chatbotInstance;
@@ -154,13 +205,40 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('lobbyInactivity', async (guid) => {
+        if (lobbies[guid] && !lobbies[guid].inactivity) {
+            lobbies[guid].inactivity = true;
+
+            let chatbotInstance = lobbies[guid].chatbot;
+
+            let inactivityMessage = await chatbotInstance.inactivityResponse();
+
+            io.to(guid).emit('message', { text: inactivityMessage, sender: chatbotInstance.botname });
+
+            let chatroomRef = database.ref(`chatrooms/${guid}/users/BOT/messages`);
+            let newMessageRef = chatroomRef.push();
+            newMessageRef.set({
+                text: inactivityMessage,
+                timestamp: formatTimestamp(new Date().getTime()),
+            });
+        }
+    })
+
     // starts chat conclusion, prompts chatbot
     socket.on('chatStartConclusionPhase', async (guid, timeLeft) => {
-        if (lobbies[guid] && lobbies[guid].botInitialized) {
+        if (lobbies[guid] && lobbies[guid].botInitialized && !lobbies[guid].conclusionStarted) {
+            lobbies[guid].conclusionStarted = true;
             let chatbotInstance = lobbies[guid].chatbot;
             let conclusionMessage = await chatbotInstance.startConclusion(timeLeft);
 
             io.to(guid).emit('message', { text: conclusionMessage, sender: chatbotInstance.botname });
+
+            let chatroomRef = database.ref(`chatrooms/${guid}/users/BOT/messages`);
+            let newMessageRef = chatroomRef.push();
+            newMessageRef.set({
+                text: conclusionMessage,
+                timestamp: formatTimestamp(new Date().getTime()),
+            });
         }
     });
 
