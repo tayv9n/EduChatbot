@@ -119,13 +119,17 @@ function SideBar(props : SideBarProps) {
   };
 
   const handleExport = () => {
+    let t;
     const csvContent =
       'Sender,Text,Timestamp\n' +
-      props.messages.map((message: any) => {
+      props.messages.map((message: any, index, array) => {
           const user = message.props.user;
           const text = message.props.message;
-          const timestamp = message.props.timestamp || '';
-
+          if (message.props.timestamp == '' && index > 0)
+            t = array[index - 1].props.timestamp || '';
+          else 
+            t = message.props.timestamp || '';
+          const timestamp = t;
           return `"${user}","${text}","${timestamp}"`;
         })
         .join('\n');
@@ -486,11 +490,11 @@ function Timer(props : TimerProps) {
       justifyContent: 'center', 
       marginLeft: '25px',
       marginRight: '25px',
-      border: '2px solid #D7DBDB', 
+      border: '2px solid #efefef', 
       borderRadius: '8px', 
       padding: '8px',
       color: 'black',
-      backgroundColor: '#D7DBDB',
+      backgroundColor: '#efefef',
     }}>
       <p style={{ margin: 0, fontSize: '20px', color: '#527785', fontWeight: 'bold' }}>
         Timer

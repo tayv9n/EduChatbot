@@ -8,7 +8,9 @@
     color: #383838;
     font-size: 25px;
     font-weight: 600;
-    padding: 30px;
+    padding: 25px;
+    padding-left: 40px;
+    padding-right: 50px;
 }
 
 .side-bar {
@@ -19,13 +21,14 @@
 .body-container {
     padding-right: 50px;
     width: 100%;
+    padding-top: 12px;
 }
 
 .chatroom-box {
     display: flex;
     height: 48px;
-    background-color: #D7DBDB;
-    color: #6C9EB1;
+    background-color: #efefef;
+    color: #527785;
     border-radius: 15px;
     align-items: center;
     margin-right: 10px;
@@ -89,18 +92,17 @@
     font-size: 22px;
     font-weight: 600;
     color: #383838;
-    cursor: 'pointer';
+    cursor: pointer;
 }
 
 .export-popup {
     position: absolute;
-    top: calc(100% + 30px);
-    left: 0;
+    top: calc(60% + 30px);
     background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    border: 1px solid #efefef;
+    border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    padding: 10px;
+    padding: 20px;
     z-index: 1px;
     text-align: center;
 }
@@ -120,8 +122,8 @@
 
 .exit-position {
     position: relative;
-    top: 340px;
-    left: 20px;
+    top: 360px;
+    left: 23px;
 }
 
 .exit-button {
@@ -130,22 +132,24 @@
     height: 50px;
     border-radius: 10px;
     margin-bottom: 20px;
-    color: black;
-    font-size: 18px;
-    font-weight: 600;
+    color: #527785;
+    font-size: 16px;
+    font-weight: 700;
     display: flex;
     align-items: center;
     padding: 10px 20px;
+    cursor: pointer;
 }
 
 .chat-header {
     background-color: #ECE7E0;
-    color: #383838;
+    color: #6E553D;
     border-radius: 20px;
     justify-content: space-between;
     align-items: center;
     display: flex;
     padding: 20px;
+    font-size: 18px;
 }
 
 .message-position {
@@ -165,7 +169,7 @@
 }
 
 .message-user {
-    font-size: 18px;
+    font-size: 17px;
     color: #5C5C5C;
     font-weight: 600;
     margin: 10px;
@@ -192,7 +196,7 @@
     margin-bottom: 20px;
     font-size: 22px;
     padding: 5px;
-    padding-left: 10px;
+    padding-left: 25px;
 }
 
 .message-button {
@@ -208,7 +212,7 @@
 }
 
 .chatbox-container {
-    background-color: #fbfbfb;
+    background-color: #fcfbfb;
     height: 550px;
     min-width: 550px;
     border-radius: 20px;

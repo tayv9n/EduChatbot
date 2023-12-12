@@ -47,7 +47,7 @@
     height: 100%;
     border: none;
     background-color: #f0f0f0;
-    font-size: 22px;
+    font-size: 30px;
     letter-spacing: 4px;
   }
   
@@ -79,9 +79,10 @@
     font-weight: bold;
     color: #527785;
     border: none;
-    padding: 10px 20px;
+    padding: 12px 20px;
     cursor: pointer;
     border-radius: 10px;
+    font-size: 17px;
   }
   
   button.top-right-button:hover {

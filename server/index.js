@@ -125,16 +125,16 @@ io.on('connection', (socket) => {
 
             console.log(` > BROADCASTING: ${messageData.text} FROM: ${messageData.sender}; TO: ${lobbies[guid].users[lobbies[guid].hostUserame]}`);
 
-            let respond = await lobbies[guid].chatbot.botMessageListener(messageData.sender, messageData.text);
+            let respond = await lobbies[guid].chatbot.botMessageListener(messageData.sender, messageData.text, messageData.timestamp);
 
             if (respond) {
-                io.to(guid).emit('message', { sender: lobbies[guid].chatbot.botname, text: respond });
+                io.to(guid).emit('message', { sender: lobbies[guid].chatbot.botname, text: respond, timestamp: formatTimestamp(new Date().getTime())});
 
                 chatroomRef = database.ref(`chatrooms/${guid}/users/BOT/messages`);
                 newMessageRef = chatroomRef.push();
                 newMessageRef.set({
                     text: respond,
-                    timestamp: formatTimestamp(new Date().getTime()),
+                    timestamp: messageData.timestamp,
                 });
             }
         }

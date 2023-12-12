@@ -50,20 +50,20 @@ export function LobbySettings(props : LobbySettingsProps) {
       <div style={{ margin: 20 }}>
         <p style={{ fontSize: 22, paddingBottom: 10}}>Chatroom Name</p>
 
-        <input onChange={handleChatNameChange} style={{ backgroundColor: '#F9F8F7', borderRadius: 20, width: 670, height: 34, border: '1px solid #C4C4C4', outline: 0, paddingLeft: 10 }}></input>
+        <input onChange={handleChatNameChange} style={{ backgroundColor: '#F9F8F7', borderRadius: 20, width: 670, height: 34, border: '1px solid #C4C4C4', outline: 0, paddingLeft: 10, fontSize: 16 }}></input>
       </div>
 
       <div style={{ margin: 20 }}>
         <p style={{ fontSize: 22, paddingBottom: 10}}>Topic</p>
 
-        <input onChange={handleTopicChange} style={{ backgroundColor: '#F9F8F7', borderRadius: 20, width: 670, height: 34, border: '1px solid #C4C4C4', outline: 0, paddingLeft: 10 }}></input>
+        <input onChange={handleTopicChange} style={{ backgroundColor: '#F9F8F7', borderRadius: 20, width: 670, height: 34, border: '1px solid #C4C4C4', outline: 0, paddingLeft: 10, fontSize: 16 }}></input>
       </div>
 
 
       <div style={{ margin: 20 }}>
         <p style={{ fontSize: 22, paddingBottom: 10}}>Chat Timer</p>
         <div style={{ display: 'flex', alignItems: 'center'}}>
-        <input onChange={handleChange} style={{ backgroundColor: '#ECE7E0', borderRadius: 20, width: 97, height: 34, outline: 0, textAlign: 'center' }} placeholder="10"></input>
+        <input onChange={handleChange} style={{ backgroundColor: '#ECE7E0', borderRadius: 20, width: 97, height: 34, outline: 0, textAlign: 'center', fontSize: 16 }} placeholder="10"></input>
           <p style={{marginLeft: 10, marginRight: 20 }}>minutes</p>
         </div>
       </div>
