@@ -13,7 +13,7 @@
 }
 
 .box-container {
-  background-color: #D7DBDB;
+  background-color: #f3f3f3;
   border-radius: 20px;
   justify-content: center;
   align-items: center;
@@ -55,7 +55,7 @@
   position: absolute;
   top: 30px;
   right: 30px;
-  background-color: #D7DBDB;
+  background-color: #f3f3f3;
   font-weight: 800;
   color: #527785;
   border: none;

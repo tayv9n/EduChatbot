@@ -45,7 +45,7 @@ export function BotSettings(props : BotSettingsProps) {
       <div style={{ margin: 20 }}>
         <p style={{ fontSize: 22, paddingBottom: 10}}>{'Custom Name'}</p>
 
-        <input onChange={handleBotName} style={{ backgroundColor: '#F9F8F7', borderRadius: 20, width: 306, height: 34, paddingLeft: 10, border: '1px solid #C4C4C4', outline: 0}}></input>
+        <input onChange={handleBotName} style={{ backgroundColor: '#F9F8F7', borderRadius: 20, width: 306, height: 34, paddingLeft: 10, border: '1px solid #C4C4C4', outline: 0, fontSize: 16}}></input>
       </div>
 
       <div style={{margin: 20}}>

@@ -66,7 +66,7 @@ class ChatBot {
         } return 1;
     }
 
-    async botMessageListener(user, message) {
+    async botMessageListener(user, message, timestamp) {
         // Recieves messages as input and decides whether to respond
         let lowParticipationUser = this.participationTracker(user);
 
