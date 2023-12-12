@@ -32,7 +32,7 @@ class ChatBot {
         this.behaviorPrompt = readFileContent("chatbot/behavior_prompt.txt");
         this.chimePrompt = readFileContent("chatbot/chime_prompt.txt");
         this.participationPrompt = readFileContent("chatbot/participation_prompt.txt");
-        this.conclusionPrompt = "There is only {{time}} minute left in this discussion. Please prompt the users to wrap up their discussion by supplying their final remarks.";
+        this.conclusionPrompt = "There is only {{time}} minute left in this discussion. Please prompt the users to WRAP UP THEIR DISCUSSION by supplying their final remarks.";
 
         this.behaviorPrompt = this.behaviorPrompt.replace("{{users}}", users.toString());
         this.behaviorPrompt = this.behaviorPrompt.replace("{{topic}}", topic);
