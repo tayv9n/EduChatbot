@@ -49,9 +49,10 @@ Make sure both client and server is running. You only need one client instance r
 
 # Connecting from other machines on the same network
 
-Change `SERVER_URL` in `client/src/App.tsx` to your machine's local ip address.
+Change the `LOCALHOST` part of `SERVER_URL` in `client/src/App.tsx` to your machine's local ip address.
 
-[For mac]([url](https://www.security.org/vpn/find-mac-ip-address/)https://www.security.org/vpn/find-mac-ip-address/)
-[For windows]([url](https://support.microsoft.com/en-us/windows/find-your-ip-address-in-windows-f21a9bbc-c582-55cd-35e0-73431160a1b9)https://support.microsoft.com/en-us/windows/find-your-ip-address-in-windows-f21a9bbc-c582-55cd-35e0-73431160a1b9)
+[For mac](https://www.security.org/vpn/find-mac-ip-address/)
+
+[For windows](https://support.microsoft.com/en-us/windows/find-your-ip-address-in-windows-f21a9bbc-c582-55cd-35e0-73431160a1b9)
     
 
